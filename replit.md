@@ -1,104 +1,99 @@
 # Business Idea Journey App
 
 ## Overview
-A Flutter Web application that guides users through the journey of transforming a business idea into a reality. The app provides a structured workflow from initial idea validation through business planning, execution planning, and implementation tracking.
-
-**Note**: The original React version is preserved in the `src/` directory. The new Flutter version is in `business_idea_flutter/`.
+A React web application that guides users through the journey of transforming a business idea into a reality. The app provides a structured workflow from initial idea validation through business planning, execution planning, and implementation tracking.
 
 ## Tech Stack
-- **Framework**: Flutter 3.32.0 (Web only)
-- **State Management**: Riverpod 3.0 (modern Notifier API)
-- **Routing**: GoRouter 14.6.2
-- **Design**: Material Design 3 with custom color scheme
-- **Animations**: Flutter's built-in animation system
+- **Framework**: React 18.3.1
+- **Build Tool**: Vite 6.0.3
+- **Language**: TypeScript 5.6.2
+- **UI Components**: Radix UI with shadcn/ui
+- **Styling**: Tailwind CSS 3.4.17
+- **Animations**: Framer Motion 12.23.24
+- **Forms**: React Hook Form 7.54.2
+- **Charts**: Recharts 2.15.0
+- **Icons**: Lucide React 0.462.0
 
 ## Project Structure
 ```
-business_idea_flutter/
-├── lib/
-│   ├── main.dart                          # Entry point and routing
-│   ├── config/
-│   │   ├── routes.dart                    # Route definitions
-│   │   └── theme.dart                     # App theme and colors
-│   ├── core/
-│   │   ├── models/
-│   │   │   ├── idea.dart                  # Idea model
-│   │   │   └── user_profile.dart          # User profile model
-│   │   └── providers/
-│   │       └── app_state.dart             # Riverpod state management
-│   ├── features/
-│   │   ├── onboarding/
-│   │   │   └── pages/
-│   │   │       ├── intro_video_page.dart  # Animated intro
-│   │   │       ├── login_page.dart        # Login screen
-│   │   │       └── profile_setup_page.dart # Profile setup
-│   │   └── idea_flow/
-│   │       └── pages/
-│   │           ├── idea_page.dart         # Idea submission
-│   │           ├── validation_page.dart   # Idea validation
-│   │           ├── business_plan_page.dart # Business planning
-│   │           ├── planner_page.dart      # Task planning
-│   │           ├── implementation_page.dart # Implementation
-│   │           └── outcomes_page.dart     # Outcomes tracking
-│   └── widgets/
-│       ├── app_sidebar.dart               # Navigation sidebar
-│       └── suggestions_panel.dart         # AI suggestions panel
-├── web/
-│   └── index.html                         # Web entry point
-└── pubspec.yaml                           # Dependencies
+src/
+├── components/
+│   ├── ui/                          # Reusable UI components (shadcn/ui)
+│   ├── figma/                       # Figma-specific components
+│   ├── IntroVideoPage.tsx           # Animated intro page
+│   ├── LoginPage.tsx                # Authentication page
+│   ├── ProfileSetupPage.tsx         # User profile setup
+│   ├── IdeaPage.tsx                 # Idea submission and management
+│   ├── ValidationPage.tsx           # Idea validation with scoring
+│   ├── BusinessPlanPage.tsx         # Business plan creation
+│   ├── PlannerPage.tsx              # Task planning interface
+│   ├── ImplementationPage.tsx       # Implementation tracking
+│   ├── OutcomesPage.tsx             # Outcomes monitoring
+│   ├── NotificationsPage.tsx        # Notifications center
+│   ├── Sidebar.tsx                  # Navigation sidebar
+│   └── SuggestionsPanel.tsx         # AI suggestions panel
+├── styles/
+│   └── globals.css                  # Global styles and Tailwind config
+├── App.tsx                          # Main app component with routing
+└── main.tsx                         # Entry point
 ```
 
 ## Development Setup
-- **Port**: The dev server runs on port 5000
-- **Host**: Configured to bind to 0.0.0.0 for Replit environment
-- **Hot Reload**: Enabled via Flutter's hot restart (press R in terminal)
+- **Port**: 5000 (configured for Replit environment)
+- **Host**: 0.0.0.0 (allows external connections)
+- **HMR**: WebSocket configured for Replit proxy environment
 
 ## Available Commands
-- `flutter run -d web-server --web-port 5000 --web-hostname 0.0.0.0` - Start development server
-- `flutter build web` - Build production bundle
-- `flutter pub get` - Install dependencies
+- `npm run dev` - Start development server on port 5000
+- `npm run build` - Build production bundle
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
 
 ## Deployment Configuration
-- **Type**: Autoscale deployment (stateless web app)
-- **Build**: `cd business_idea_flutter && flutter build web`
-- **Run**: Serve the `business_idea_flutter/build/web` directory
+- **Type**: Autoscale (stateless web app)
+- **Build**: `npm run build`
+- **Run**: Serves the built application with Vite preview server
 
 ## Key Features
 1. **Intro Video**: Animated introduction showing the journey from idea to business
-2. **Authentication**: Simple login system
-3. **Profile Setup**: User profile configuration
-4. **Idea Management**: Submit and track business ideas
-5. **Validation**: Validate ideas with scoring system
-6. **Business Planning**: Generate and manage business plans
-7. **Planning & Implementation**: Track tasks and progress
-8. **Outcomes Tracking**: Monitor results and achievements
-9. **Notifications**: Stay updated on progress
+2. **Authentication**: Simple login system with username-based auth
+3. **Profile Setup**: User profile configuration (industry, expertise, goals)
+4. **Idea Management**: Submit, review, and track business ideas
+5. **Validation**: Multi-section validation with confidence scoring system
+6. **Business Planning**: Template selection and business plan generation with task tables
+7. **Planning Interface**: Organize tasks, resources, budget, hardware, timeline, goals, and partnerships
+8. **Implementation Tracking**: Timeline, calendar, and journey map views for tracking progress
+9. **Outcomes Tracking**: Monitor results, analyze achievements, and view previous idea journeys
+10. **Notifications**: Real-time updates on validation, tasks, milestones, and deadlines
 
 ## Design System
-The app uses a custom design system with:
-- Dark mode support via `next-themes`
-- Custom color tokens using oklch color space
-- Responsive design with Tailwind utilities
-- Accessible components via Radix UI
+- Uses shadcn/ui components built on Radix UI primitives
+- Tailwind CSS with custom configuration
+- Dark mode support via next-themes
+- Responsive design with mobile considerations
+- Custom animations with Framer Motion
 
 ## Recent Changes (October 15, 2025)
-- **Converted entire React app to Flutter Web**
-- Installed Flutter 3.32.0 SDK with web support
-- Created complete Flutter project structure with clean architecture
-- Implemented Riverpod 3.0 state management with modern Notifier API
-- Set up GoRouter with authentication guards and navigation flow
-- Built all onboarding pages (Intro, Login, Profile Setup)
-- Implemented Idea submission page with form validation
-- Created placeholder pages for Validation, Business Plan, Planner, Implementation, and Outcomes
-- Built navigation sidebar with route highlighting
-- Configured Material Design 3 theme matching original color scheme
-- Successfully running on port 5000 with Flutter Web server
-- Created comprehensive code reference document (FLUTTER_CODE_REFERENCE.md)
+- Successfully set up React + Vite project in Replit environment
+- Installed all npm dependencies (396 packages)
+- Configured Vite for Replit proxy environment:
+  - WebSocket HMR with WSS protocol
+  - Host configuration using REPLIT_DEV_DOMAIN
+  - Port 5000 with client port 443 for proxy compatibility
+- Set up workflow to run development server
+- Configured deployment for autoscale hosting
+- Verified app is running correctly with intro animation
 
-## Notes
-- Flutter Web app uses Material Design 3 components
-- State management uses Riverpod 3.0 with modern Notifier API (not deprecated StateNotifier)
-- For simple state (bool, String), uses legacy.StateProvider from 'package:riverpod/legacy.dart'
+## Technical Notes
 - The app uses client-side state management (no backend currently)
-- Original React app preserved in `src/` directory for reference
-- All Flutter code is documented in FLUTTER_CODE_REFERENCE.md
+- All data is stored in React state (ideas, validations, business plans, etc.)
+- Vite HMR is configured to work through Replit's proxy with WSS protocol
+- TypeScript strict mode enabled for type safety
+- ESLint configured with React hooks and refresh plugins
+
+## Architecture Decisions
+- **State Management**: React useState for simplicity (could be upgraded to Context/Redux for scaling)
+- **Routing**: Page-based navigation managed in App.tsx (could be upgraded to React Router)
+- **Data Persistence**: Currently in-memory only (future: add database integration)
+- **Styling**: Utility-first approach with Tailwind CSS
+- **Component Library**: shadcn/ui for consistent, accessible components
