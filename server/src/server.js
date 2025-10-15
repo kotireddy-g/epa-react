@@ -361,13 +361,28 @@ app.delete('/api/implementation-item/:id', (req, res) => {
 
 app.listen(PORT, 'localhost', () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📊 API endpoints available:`);
-  console.log(`   GET    /api/health`);
-  console.log(`   GET    /api/ideas`);
-  console.log(`   POST   /api/ideas`);
-  console.log(`   PUT    /api/ideas/:id`);
-  console.log(`   POST   /api/validations`);
-  console.log(`   POST   /api/business-plans`);
-  console.log(`   POST   /api/implementation-items`);
-  console.log(`   GET    /api/implementation-items/:ideaId`);
+  console.log(`📊 Full REST API endpoints available:`);
+  console.log(`\n   💡 Ideas:`);
+  console.log(`   GET    /api/ideas                - List all ideas`);
+  console.log(`   GET    /api/ideas/:id            - Get single idea`);
+  console.log(`   POST   /api/ideas                - Create idea`);
+  console.log(`   PUT    /api/ideas/:id            - Update idea`);
+  console.log(`   DELETE /api/ideas/:id            - Delete idea (CASCADE)`);
+  console.log(`\n   ✅ Validations:`);
+  console.log(`   GET    /api/validations/:ideaId  - Get validation`);
+  console.log(`   POST   /api/validations          - Create validation`);
+  console.log(`   PUT    /api/validations/:id      - Update validation`);
+  console.log(`   DELETE /api/validations/:id      - Delete validation`);
+  console.log(`\n   📋 Business Plans:`);
+  console.log(`   GET    /api/business-plans/:ideaId - Get business plan`);
+  console.log(`   POST   /api/business-plans        - Create business plan`);
+  console.log(`   PUT    /api/business-plans/:id    - Update business plan`);
+  console.log(`   DELETE /api/business-plans/:id    - Delete business plan`);
+  console.log(`\n   🎯 Implementation Items:`);
+  console.log(`   GET    /api/implementation-items/:ideaId - List items for idea`);
+  console.log(`   GET    /api/implementation-item/:id      - Get single item`);
+  console.log(`   POST   /api/implementation-items         - Create item`);
+  console.log(`   PUT    /api/implementation-item/:id      - Update item`);
+  console.log(`   DELETE /api/implementation-item/:id      - Delete item`);
+  console.log(`\n   ❤️  Health: GET /api/health`);
 });

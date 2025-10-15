@@ -74,6 +74,8 @@ src/
 - Custom animations with Framer Motion
 
 ## Recent Changes (October 15, 2025)
+
+### Initial Setup
 - Successfully set up React + Vite project in Replit environment
 - Installed all npm dependencies (396 packages)
 - Configured Vite for Replit proxy environment:
@@ -84,16 +86,65 @@ src/
 - Configured deployment for autoscale hosting
 - Verified app is running correctly with intro animation
 
+### Styling Fixes
+- Fixed dialog background visibility issue:
+  - Converted CSS color variables from mixed formats (hex/oklch) to consistent HSL format
+  - Updated Tailwind configuration to properly map CSS variables
+  - Dialogs now display with proper white/dark backgrounds
+- Verified button styling across all components using shadcn/ui Button component
+
+### Backend API Implementation (Complete)
+- **Database**: SQLite with better-sqlite3
+  - Foreign key enforcement enabled for CASCADE deletes
+  - Tables: ideas, validations, business_plans, implementation_items
+  - All relationships properly configured with ON DELETE CASCADE
+  
+- **Backend Server**: Express.js on port 3001
+  - CORS enabled for frontend communication
+  - JSON parsing middleware
+  - Comprehensive error handling
+  - Consistent camelCase response format (no snake_case exposure)
+  
+- **Full REST API Endpoints**:
+  - **Ideas**: GET (list/single), POST, PUT, DELETE with CASCADE
+  - **Validations**: GET (by ideaId), POST, PUT, DELETE
+  - **Business Plans**: GET (by ideaId), POST, PUT, DELETE
+  - **Implementation Items**: GET (by ideaId/single), POST, PUT, DELETE
+  
+- **Frontend API Client**: TypeScript service at `src/services/api.ts`
+  - Type-safe interfaces for all entities
+  - Error handling built-in
+  - Mirrors backend endpoint structure
+
+### Documentation
+- Created comprehensive API_INTEGRATION_GUIDE.md:
+  - Flutter vs React API patterns comparison
+  - Step-by-step integration guide
+  - Complete examples with useState and useEffect hooks
+  - Error handling and loading state patterns
+  - Full API method reference
+
 ## Technical Notes
-- The app uses client-side state management (no backend currently)
-- All data is stored in React state (ideas, validations, business plans, etc.)
+- **Backend**: Express.js + SQLite (port 3001, localhost only)
+- **Frontend**: React + Vite (port 5000, public via 0.0.0.0)
+- **Data Flow**: API client (src/services/api.ts) → Backend API → SQLite database
+- **Response Format**: All API responses use camelCase for consistency with React/TypeScript
+- **Foreign Keys**: Enabled with CASCADE deletes for data integrity
 - Vite HMR is configured to work through Replit's proxy with WSS protocol
 - TypeScript strict mode enabled for type safety
 - ESLint configured with React hooks and refresh plugins
 
 ## Architecture Decisions
-- **State Management**: React useState for simplicity (could be upgraded to Context/Redux for scaling)
+- **Backend Database**: SQLite (file-based) chosen for Replit environment compatibility
+- **API Architecture**: RESTful API with full CRUD operations on all entities
+- **State Management**: Transitioning from in-memory to API-backed data persistence
+- **Data Serialization**: Transform functions ensure consistent camelCase responses
 - **Routing**: Page-based navigation managed in App.tsx (could be upgraded to React Router)
-- **Data Persistence**: Currently in-memory only (future: add database integration)
 - **Styling**: Utility-first approach with Tailwind CSS
 - **Component Library**: shadcn/ui for consistent, accessible components
+
+## Next Steps
+- Integrate API calls into React components (replace useState with API data)
+- Add loading states and error handling to UI components
+- Implement optimistic UI updates for better UX
+- Consider adding user authentication and multi-user support
