@@ -4,6 +4,8 @@ const path = require('path');
 const dbPath = path.join(__dirname, '../../business_ideas.db');
 const db = new Database(dbPath);
 
+db.pragma('foreign_keys = ON');
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS ideas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
