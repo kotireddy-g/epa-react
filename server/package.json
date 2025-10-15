@@ -1,0 +1,13 @@
+{
+  "name": "business-ideas-api",
+  "version": "1.0.0",
+  "description": "Backend API for Business Ideas Application",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js"
+  },
+  "keywords": ["api", "express", "business"],
+  "author": "",
+  "license": "ISC"
+}
