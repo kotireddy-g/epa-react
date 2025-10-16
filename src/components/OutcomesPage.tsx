@@ -15,7 +15,7 @@ interface OutcomesPageProps {
   onTaskClick?: (taskId: string) => void;
 }
 
-export function OutcomesPage({ idea, onTaskClick }: OutcomesPageProps) {
+export function OutcomesPage({ idea }: OutcomesPageProps) {
   const [selectedOutcome, setSelectedOutcome] = useState<OutcomeTask | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
 

@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Bell, CheckCircle, AlertCircle, Info, Clock, Filter, Check } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Bell, CheckCircle, AlertCircle, Info, Clock, Check } from 'lucide-react';
+import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import { cn } from './ui/utils';
 
 interface Notification {

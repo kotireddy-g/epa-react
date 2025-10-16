@@ -10,7 +10,7 @@ interface FeedbackButtonProps {
   onSaveFeedback?: (feedback: string) => void;
 }
 
-export function FeedbackButton({ itemId, itemType, onSaveFeedback }: FeedbackButtonProps) {
+export function FeedbackButton({itemType, onSaveFeedback }: FeedbackButtonProps) {
   const [feedback, setFeedback] = useState('');
   const [isOpen, setIsOpen] = useState(false);
 

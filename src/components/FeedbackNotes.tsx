@@ -12,7 +12,7 @@ interface FeedbackNotesProps {
   onSaveNotes?: (notes: string) => void;
 }
 
-export function FeedbackNotes({ itemId, itemType, onSaveFeedback, onSaveNotes }: FeedbackNotesProps) {
+export function FeedbackNotes({itemType, onSaveFeedback, onSaveNotes }: FeedbackNotesProps) {
   const [feedback, setFeedback] = useState('');
   const [notes, setNotes] = useState('');
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);

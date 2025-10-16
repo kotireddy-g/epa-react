@@ -164,6 +164,9 @@ export function PlannerPage({ idea, onItemClick }: PlannerPageProps) {
       icon: TrendingUp,
       color: 'pink',
       items: 9,
+      implemented: 75,
+      succeed: 50,
+      pending: 25,
     },
   ];
 

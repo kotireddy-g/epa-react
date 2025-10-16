@@ -174,7 +174,7 @@ export function JourneyMapView() {
         <div className="absolute left-8 top-0 bottom-0 w-1 bg-gray-200" style={{ height: 'calc(100% - 60px)' }}></div>
 
         <div className="space-y-6">
-          {stages.map((stage, index) => {
+          {stages.map((stage) => {
             const Icon = stage.icon;
             const isCurrent = stage.status === 'current';
             

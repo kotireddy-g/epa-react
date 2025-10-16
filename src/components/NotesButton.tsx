@@ -11,7 +11,7 @@ interface NotesButtonProps {
   onSaveNotes?: (notes: string) => void;
 }
 
-export function NotesButton({ itemId, itemType, onSaveNotes }: NotesButtonProps) {
+export function NotesButton({itemType, onSaveNotes }: NotesButtonProps) {
   const [notes, setNotes] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [showWarning, setShowWarning] = useState(false);

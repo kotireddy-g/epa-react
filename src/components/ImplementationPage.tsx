@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, User, Calendar as CalendarIcon, TrendingUp, ListTodo, Users, Wrench, DollarSign, Target, Briefcase, LayoutList, CalendarDays, Edit3, ChevronLeft, ChevronRight, Map } from 'lucide-react';
+import { User, Calendar as CalendarIcon, ListTodo, Users, Wrench, DollarSign, Target, Briefcase, LayoutList, CalendarDays, Edit3, ChevronLeft, ChevronRight, Map } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Progress } from './ui/progress';
