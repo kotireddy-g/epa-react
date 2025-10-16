@@ -3,6 +3,8 @@ import { Sidebar } from './components/Sidebar';
 import { SuggestionsPanel } from './components/SuggestionsPanel';
 import { IntroVideoPage } from './components/IntroVideoPage';
 import { LoginPage } from './components/LoginPage';
+import { RegistrationPage } from './components/RegistrationPage';
+import { EmailVerificationPage } from './components/EmailVerificationPage';
 import { ProfileSetupPage } from './components/ProfileSetupPage';
 import { IdeaPage } from './components/IdeaPage';
 import { ValidationPage } from './components/ValidationPage';
@@ -28,15 +30,15 @@ export interface Idea {
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(true);
+  const [authPage, setAuthPage] = useState<'login' | 'register' | 'verify'>('login');
+  const [registrationEmail, setRegistrationEmail] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isProfileComplete, setIsProfileComplete] = useState(false);
-  const [userProfile, setUserProfile] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState<'idea' | 'validation' | 'business-plan' | 'planner' | 'implementation' | 'outcomes' | 'notifications'>('idea');
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [currentIdea, setCurrentIdea] = useState<Idea | null>(null);
   const [selectedPlannerItem, setSelectedPlannerItem] = useState<string | null>(null);
   const [showCompanyNameDialog, setShowCompanyNameDialog] = useState(false);
-  const [companyName, setCompanyName] = useState<string>('');
 
   const handleIdeaSubmit = (idea: Idea) => {
     setIdeas(prev => [...prev, idea]);
@@ -49,7 +51,6 @@ export default function App() {
   };
 
   const handleCompanyNameConfirm = (name: string) => {
-    setCompanyName(name);
     setShowCompanyNameDialog(false);
     
     if (currentIdea) {
@@ -103,17 +104,26 @@ export default function App() {
     setShowIntro(true);
     setIsAuthenticated(false);
     setIsProfileComplete(false);
+    setAuthPage('login');
     setCurrentIdea(null);
     setIdeas([]);
   };
 
-  const handleLogin = (username: string) => {
+  const handleLogin = () => {
     setIsAuthenticated(true);
   };
 
-  const handleProfileComplete = (profileData: any) => {
-    setUserProfile(profileData);
+  const handleProfileComplete = () => {
     setIsProfileComplete(true);
+  };
+
+  const handleRegistrationSuccess = (email: string) => {
+    setRegistrationEmail(email);
+    setAuthPage('verify');
+  };
+
+  const handleVerificationSuccess = () => {
+    setAuthPage('login');
   };
 
   // Show intro video
@@ -121,9 +131,33 @@ export default function App() {
     return <IntroVideoPage onComplete={() => setShowIntro(false)} />;
   }
 
-  // Show login page if not authenticated
+  // Show auth pages if not authenticated
   if (!isAuthenticated) {
-    return <LoginPage onLogin={handleLogin} />;
+    if (authPage === 'register') {
+      return (
+        <RegistrationPage
+          onSuccess={handleRegistrationSuccess}
+          onBackToLogin={() => setAuthPage('login')}
+        />
+      );
+    }
+    
+    if (authPage === 'verify') {
+      return (
+        <EmailVerificationPage
+          email={registrationEmail}
+          onVerified={handleVerificationSuccess}
+          onBackToLogin={() => setAuthPage('login')}
+        />
+      );
+    }
+    
+    return (
+      <LoginPage
+        onLogin={handleLogin}
+        onRegisterClick={() => setAuthPage('register')}
+      />
+    );
   }
 
   // Show profile setup if authenticated but profile not complete
@@ -179,7 +213,7 @@ export default function App() {
         {currentPage === 'outcomes' && currentIdea && (
           <OutcomesPage 
             idea={currentIdea}
-            onTaskClick={(taskId) => {
+            onTaskClick={() => {
               setSelectedPlannerItem('tasks');
               setCurrentPage('implementation');
             }}

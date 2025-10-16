@@ -4,24 +4,39 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { authApi } from '../services/authApi';
 
 interface LoginPageProps {
   onLogin: (username: string) => void;
+  onRegisterClick: () => void;
 }
 
-export function LoginPage({ onLogin }: LoginPageProps) {
+export function LoginPage({ onLogin, onRegisterClick }: LoginPageProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
     
-    // Dummy authentication
-    if (username === 'Admin' && password === 'Admin') {
-      onLogin(username);
-    } else {
-      setError('Invalid credentials. Use Username: Admin, Password: Admin');
+    try {
+      const response = await authApi.login({
+        username,
+        password,
+      });
+
+      if (response.status === 'Error') {
+        setError(response.message || 'Login failed');
+      } else {
+        onLogin(username);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -75,27 +90,19 @@ export function LoginPage({ onLogin }: LoginPageProps) {
               </div>
             )}
 
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <p className="text-sm text-blue-900">
-                <strong>Demo Credentials:</strong>
-              </p>
-              <p className="text-sm text-blue-700 mt-1">
-                Username: <strong>Admin</strong>
-              </p>
-              <p className="text-sm text-blue-700">
-                Password: <strong>Admin</strong>
-              </p>
-            </div>
-
-            <Button type="submit" className="w-full" size="lg">
-              Sign In
+            <Button type="submit" className="w-full" size="lg" disabled={loading}>
+              {loading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-500">
               Don't have an account?{' '}
-              <button className="text-blue-600 hover:underline">
+              <button
+                type="button"
+                className="text-blue-600 hover:underline"
+                onClick={onRegisterClick}
+              >
                 Sign up
               </button>
             </p>
