@@ -7,7 +7,16 @@
     "start": "node src/server.js",
     "dev": "node src/server.js"
   },
-  "keywords": ["api", "express", "business"],
+  "keywords": [
+    "api",
+    "express",
+    "business"
+  ],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "better-sqlite3": "^12.4.1",
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  }
 }
