@@ -18,5 +18,12 @@ export default defineConfig({
       host: process.env.REPLIT_DEV_DOMAIN || 'localhost',
       clientPort: 443,
     },
+    allowedHosts: ['all'],
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    },
   },
 })
