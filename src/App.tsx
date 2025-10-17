@@ -1,10 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { LandingPage } from './components/LandingPage';
 import { Sidebar } from './components/Sidebar';
 import { SuggestionsPanel } from './components/SuggestionsPanel';
 import { IntroVideoPage } from './components/IntroVideoPage';
-import { LoginPage } from './components/LoginPage';
-import { RegistrationPage } from './components/RegistrationPage';
-import { EmailVerificationPage } from './components/EmailVerificationPage';
 import { ProfileSetupPage } from './components/ProfileSetupPage';
 import { IdeaPage } from './components/IdeaPage';
 import { ValidationPage } from './components/ValidationPage';
@@ -14,6 +12,7 @@ import { ImplementationPage } from './components/ImplementationPage';
 import { OutcomesPage } from './components/OutcomesPage';
 import { NotificationsPage } from './components/NotificationsPage';
 import { CompanyNameDialog } from './components/CompanyNameDialog';
+import { FloatingHomeButton } from './components/FloatingHomeButton';
 
 export interface Idea {
   id: string;
@@ -29,16 +28,46 @@ export interface Idea {
 }
 
 export default function App() {
-  const [showIntro, setShowIntro] = useState(true);
-  const [authPage, setAuthPage] = useState<'login' | 'register' | 'verify'>('login');
-  const [registrationEmail, setRegistrationEmail] = useState('');
+  const [showLandingPage, setShowLandingPage] = useState(true);
+  const [showIntro, setShowIntro] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isProfileComplete, setIsProfileComplete] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState<'idea' | 'validation' | 'business-plan' | 'planner' | 'implementation' | 'outcomes' | 'notifications'>('idea');
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [currentIdea, setCurrentIdea] = useState<Idea | null>(null);
   const [selectedPlannerItem, setSelectedPlannerItem] = useState<string | null>(null);
   const [showCompanyNameDialog, setShowCompanyNameDialog] = useState(false);
+  const [companyName, setCompanyName] = useState<string>('');
+
+  // Load session from localStorage on mount
+  useEffect(() => {
+    const sessionData = localStorage.getItem('executionPlannerSession');
+    if (sessionData) {
+      try {
+        const session = JSON.parse(sessionData);
+        setShowLandingPage(false);
+        setShowIntro(false);
+        setIsAuthenticated(session.isAuthenticated || false);
+        setIsProfileComplete(session.isProfileComplete || false);
+        setUserProfile(session.userProfile || null);
+      } catch (error) {
+        console.error('Error loading session:', error);
+      }
+    }
+  }, []);
+
+  // Save session to localStorage whenever authentication state changes
+  useEffect(() => {
+    if (isAuthenticated || isProfileComplete) {
+      const sessionData = {
+        isAuthenticated,
+        isProfileComplete,
+        userProfile,
+      };
+      localStorage.setItem('executionPlannerSession', JSON.stringify(sessionData));
+    }
+  }, [isAuthenticated, isProfileComplete, userProfile]);
 
   const handleIdeaSubmit = (idea: Idea) => {
     setIdeas(prev => [...prev, idea]);
@@ -51,6 +80,7 @@ export default function App() {
   };
 
   const handleCompanyNameConfirm = (name: string) => {
+    setCompanyName(name);
     setShowCompanyNameDialog(false);
     
     if (currentIdea) {
@@ -101,67 +131,47 @@ export default function App() {
   };
 
   const handleHomeClick = () => {
-    setShowIntro(true);
+    // Navigate to Idea page instead of resetting
+    setCurrentPage('idea');
+  };
+
+  const handleLogout = () => {
+    // Clear session and redirect to landing page
+    localStorage.removeItem('executionPlannerSession');
+    setShowLandingPage(true);
+    setShowIntro(false);
     setIsAuthenticated(false);
     setIsProfileComplete(false);
-    setAuthPage('login');
+    setUserProfile(null);
     setCurrentIdea(null);
     setIdeas([]);
   };
 
-  const handleLogin = () => {
-    setIsAuthenticated(true);
+  const handleLandingLogin = () => {
+    setShowLandingPage(false);
+    setShowIntro(true);
   };
 
-  const handleProfileComplete = () => {
+  const handleProfileComplete = (profileData: any) => {
+    setUserProfile(profileData);
     setIsProfileComplete(true);
   };
 
-  const handleRegistrationSuccess = (email: string) => {
-    setRegistrationEmail(email);
-    setAuthPage('verify');
-  };
-
-  const handleVerificationSuccess = () => {
-    setAuthPage('login');
-  };
+  // Show landing page first (only if not logged in)
+  if (showLandingPage && !isAuthenticated) {
+    return <LandingPage onLogin={handleLandingLogin} />;
+  }
 
   // Show intro video
   if (showIntro) {
-    return <IntroVideoPage onComplete={() => setShowIntro(false)} />;
-  }
-
-  // Show auth pages if not authenticated
-  if (!isAuthenticated) {
-    if (authPage === 'register') {
-      return (
-        <RegistrationPage
-          onSuccess={handleRegistrationSuccess}
-          onBackToLogin={() => setAuthPage('login')}
-        />
-      );
-    }
-    
-    if (authPage === 'verify') {
-      return (
-        <EmailVerificationPage
-          email={registrationEmail}
-          onVerified={handleVerificationSuccess}
-          onBackToLogin={() => setAuthPage('login')}
-        />
-      );
-    }
-    
-    return (
-      <LoginPage
-        onLogin={handleLogin}
-        onRegisterClick={() => setAuthPage('register')}
-      />
-    );
+    return <IntroVideoPage onComplete={() => {
+      setShowIntro(false);
+      setIsAuthenticated(true);
+    }} />;
   }
 
   // Show profile setup if authenticated but profile not complete
-  if (!isProfileComplete) {
+  if (isAuthenticated && !isProfileComplete) {
     return (
       <div className="flex h-screen bg-gray-50">
         <ProfileSetupPage onComplete={handleProfileComplete} />
@@ -173,7 +183,15 @@ export default function App() {
   // Show main application
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar currentPage={currentPage} onNavigate={navigateToPage} onHome={handleHomeClick} />
+      <Sidebar 
+        currentPage={currentPage} 
+        onNavigate={navigateToPage} 
+        onHome={handleHomeClick}
+        onLogout={handleLogout}
+      />
+      
+      {/* Floating Home Button */}
+      <FloatingHomeButton onClick={handleHomeClick} />
       
       <main className="flex-1 overflow-auto">
         {currentPage === 'idea' && (
@@ -213,7 +231,7 @@ export default function App() {
         {currentPage === 'outcomes' && currentIdea && (
           <OutcomesPage 
             idea={currentIdea}
-            onTaskClick={() => {
+            onTaskClick={(taskId) => {
               setSelectedPlannerItem('tasks');
               setCurrentPage('implementation');
             }}
