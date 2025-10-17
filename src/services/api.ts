@@ -1,3 +1,5 @@
+import { authApi } from './authApi';
+
 const API_BASE_URL = '/api';
 
 export interface Idea {
@@ -44,11 +46,18 @@ class ApiService {
     endpoint: string, 
     options?: RequestInit
   ): Promise<T> {
+    const accessToken = authApi.getAccessToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...options?.headers as Record<string, string>,
+    };
+
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
+      headers,
       ...options,
     });
 

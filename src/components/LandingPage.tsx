@@ -4,7 +4,8 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
-import { Eye, Brain, FileText, Zap, Play, Box, Shield, Rocket, ArrowLeftRight, CheckCircle2, TrendingUp, Users, Target, Lightbulb, Briefcase, Package, ShoppingCart, Award } from 'lucide-react';
+import { Eye, Brain, FileText, Zap, Play, Box, Shield, Rocket, ArrowLeftRight, CheckCircle2, TrendingUp, Target, Lightbulb, Briefcase, Package, Award } from 'lucide-react';
+import { authApi } from '../services/authApi';
 
 interface LandingPageProps {
   onLogin: () => void;
@@ -16,6 +17,11 @@ export function LandingPage({ onLogin }: LandingPageProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [activePillar, setActivePillar] = useState(0);
   const [activeStage, setActiveStage] = useState(0);
+  
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll();
@@ -88,9 +94,25 @@ export function LandingPage({ onLogin }: LandingPageProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleLogin = () => {
-    setShowLoginModal(false);
-    onLogin();
+  const handleLogin = async () => {
+    setLoginError('');
+    setIsLoggingIn(true);
+
+    try {
+      await authApi.login({
+        username: loginEmail,
+        password: loginPassword,
+      });
+      
+      setShowLoginModal(false);
+      setLoginEmail('');
+      setLoginPassword('');
+      onLogin();
+    } catch (error: any) {
+      setLoginError(error.message || 'Login failed. Please try again.');
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
   // Calculate positions for pillars on circle
@@ -708,16 +730,44 @@ export function LandingPage({ onLogin }: LandingPageProps) {
           </DialogHeader>
 
           <div className="space-y-4 mt-4">
+            {loginError && (
+              <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+                {loginError}
+              </div>
+            )}
             <div>
               <Label htmlFor="login-email">Email</Label>
-              <Input id="login-email" type="email" placeholder="Enter your email" />
+              <Input 
+                id="login-email" 
+                type="email" 
+                placeholder="Enter your email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                disabled={isLoggingIn}
+              />
             </div>
             <div>
               <Label htmlFor="login-password">Password</Label>
-              <Input id="login-password" type="password" placeholder="Enter your password" />
+              <Input 
+                id="login-password" 
+                type="password" 
+                placeholder="Enter your password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                disabled={isLoggingIn}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !isLoggingIn) {
+                    handleLogin();
+                  }
+                }}
+              />
             </div>
-            <Button className="w-full bg-red-600 hover:bg-red-700 text-white" onClick={handleLogin}>
-              Login
+            <Button 
+              className="w-full bg-red-600 hover:bg-red-700 text-white" 
+              onClick={handleLogin}
+              disabled={isLoggingIn || !loginEmail || !loginPassword}
+            >
+              {isLoggingIn ? 'Logging in...' : 'Login'}
             </Button>
           </div>
         </DialogContent>

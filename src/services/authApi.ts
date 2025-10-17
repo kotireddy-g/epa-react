@@ -47,6 +47,59 @@ export interface VerifyLinkedInData {
   code: string;
 }
 
+export interface UserProfile {
+  fullname: string;
+  date_of_birth: string;
+  gender: string;
+  professional_title: string;
+  company: string;
+  industry: string;
+  years_of_experience: number;
+  businessType: string;
+  companySize: string;
+  fundingStage: string;
+}
+
+export interface UserAccount {
+  id: number;
+  phone_number: string;
+  email_verified: boolean;
+  linkedin_verified: boolean;
+  github_verified: boolean;
+  verification_score: number;
+  is_genuine_user: boolean;
+  account_status: string;
+  linkedin_profile: string | null;
+  github_profile: string | null;
+  profile: UserProfile;
+}
+
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  is_active: boolean;
+  date_joined: string;
+  last_login: string | null;
+  user_account: UserAccount;
+}
+
+export interface AuthTokens {
+  refresh: string;
+  access: string;
+}
+
+export interface LoginResponse {
+  status: string;
+  message: string;
+  data: {
+    user: User;
+    tokens: AuthTokens;
+  };
+}
+
 export interface ApiResponse<T = any> {
   status?: string;
   message?: string;
@@ -54,6 +107,9 @@ export interface ApiResponse<T = any> {
 }
 
 class AuthApiService {
+  private accessToken: string | null = null;
+  private refreshToken: string | null = null;
+
   private async request<T>(
     endpoint: string,
     options?: RequestInit
@@ -116,11 +172,119 @@ class AuthApiService {
     });
   }
 
-  async login(loginData: LoginData): Promise<ApiResponse> {
-    return this.request<ApiResponse>('/login/', {
-      method: 'POST',
-      body: JSON.stringify(loginData),
-    });
+  async login(loginData: LoginData): Promise<LoginResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/login/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(loginData),
+      });
+
+      const data = await response.json();
+
+      if (data.status === 'Error') {
+        throw new Error(data.message || 'Login failed');
+      }
+
+      if (data.status === 'Success' && data.data) {
+        this.accessToken = data.data.tokens.access;
+        this.refreshToken = data.data.tokens.refresh;
+        this.saveToLocalStorage(data);
+      }
+
+      return data;
+    } catch (error: any) {
+      if (error.message) {
+        throw error;
+      }
+      throw new Error('Network error. Please check your connection.');
+    }
+  }
+
+  private saveToLocalStorage(loginResponse: LoginResponse) {
+    const sessionData = {
+      isAuthenticated: true,
+      user: loginResponse.data.user,
+      tokens: loginResponse.data.tokens,
+      userProfile: {
+        fullName: loginResponse.data.user.user_account.profile.fullname,
+        email: loginResponse.data.user.email,
+        professionalTitle: loginResponse.data.user.user_account.profile.professional_title,
+        company: loginResponse.data.user.user_account.profile.company,
+        industry: loginResponse.data.user.user_account.profile.industry,
+        yearsOfExperience: loginResponse.data.user.user_account.profile.years_of_experience,
+        businessType: loginResponse.data.user.user_account.profile.businessType,
+        companySize: loginResponse.data.user.user_account.profile.companySize,
+        fundingStage: loginResponse.data.user.user_account.profile.fundingStage,
+      },
+      isProfileComplete: true,
+    };
+
+    localStorage.setItem('executionPlannerSession', JSON.stringify(sessionData));
+  }
+
+  getAccessToken(): string | null {
+    if (this.accessToken) {
+      return this.accessToken;
+    }
+
+    const sessionData = localStorage.getItem('executionPlannerSession');
+    if (sessionData) {
+      try {
+        const session = JSON.parse(sessionData);
+        this.accessToken = session.tokens?.access || null;
+        this.refreshToken = session.tokens?.refresh || null;
+        return this.accessToken;
+      } catch {
+        return null;
+      }
+    }
+
+    return null;
+  }
+
+  getRefreshToken(): string | null {
+    if (this.refreshToken) {
+      return this.refreshToken;
+    }
+
+    const sessionData = localStorage.getItem('executionPlannerSession');
+    if (sessionData) {
+      try {
+        const session = JSON.parse(sessionData);
+        this.refreshToken = session.tokens?.refresh || null;
+        return this.refreshToken;
+      } catch {
+        return null;
+      }
+    }
+
+    return null;
+  }
+
+  logout() {
+    this.accessToken = null;
+    this.refreshToken = null;
+    localStorage.removeItem('executionPlannerSession');
+  }
+
+  getStoredUser(): User | null {
+    const sessionData = localStorage.getItem('executionPlannerSession');
+    if (sessionData) {
+      try {
+        const session = JSON.parse(sessionData);
+        return session.user || null;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  isAuthenticated(): boolean {
+    return this.getAccessToken() !== null;
   }
 }
 
