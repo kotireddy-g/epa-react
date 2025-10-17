@@ -1,9 +1,9 @@
-import { Lightbulb, CheckCircle, FileText, Calendar, Kanban, Target, Bell, Home, LogOut } from 'lucide-react';
+import { Lightbulb, CheckCircle, FileText, Calendar, Kanban, Target, Bell, Home, LogOut, User } from 'lucide-react';
 import { cn } from './ui/utils';
 
 interface SidebarProps {
   currentPage: string;
-  onNavigate: (page: 'idea' | 'validation' | 'business-plan' | 'planner' | 'implementation' | 'outcomes' | 'notifications') => void;
+  onNavigate: (page: 'idea' | 'validation' | 'business-plan' | 'planner' | 'implementation' | 'outcomes' | 'notifications' | 'profile') => void;
   onHome?: () => void;
   onLogout?: () => void;
 }
@@ -17,6 +17,7 @@ export function Sidebar({ currentPage, onNavigate, onHome, onLogout }: SidebarPr
     { id: 'implementation', label: 'Implementation', icon: Kanban },
     { id: 'outcomes', label: 'Outcomes', icon: Target },
     { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'profile', label: 'Profile', icon: User },
   ];
 
   return (

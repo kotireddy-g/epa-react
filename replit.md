@@ -79,6 +79,31 @@ src/
 
 ## Recent Changes
 
+### October 17, 2025 - UI Theme Updates & Profile Section
+- **Fixed Input Borders and Form Elements**:
+  - Updated input border opacity from transparent (0) to visible (0.2)
+  - Changed input background from gray (220 14% 96%) to white (0 0% 100%)
+  - All text fields, textareas, and radio buttons now have clearly visible borders
+  
+- **Color Theme Update - Black for Main Content, Red for Sidebar**:
+  - Changed primary color from red (0 73% 50%) to near-black (0 0% 9%)
+  - Main content buttons now use black/neutral theme instead of red
+  - Sidebar maintains red color scheme using hardcoded Tailwind classes (bg-red-600, text-red-600)
+  - Landing page keeps red branding for consistency
+  
+- **New Profile Section**:
+  - Created ProfilePage component to display logged-in user information
+  - Shows user avatar, contact info (email, LinkedIn, company website)
+  - Displays professional details (industry, business type, experience, company size)
+  - Includes funding stage information for startup owners
+  - Added Profile menu item to sidebar navigation
+  - Integrated profile routing in main App component
+  
+- **Component Updates**:
+  - Sidebar: Added Profile menu item with User icon
+  - App.tsx: Added ProfilePage route and navigation handling
+  - All changes isolated to avoid affecting other areas of the application
+
 ### October 17, 2025 - GitHub Import Setup (Fresh Clone)
 - **Successfully imported and configured the project**:
   - Installed all npm dependencies (frontend: 495 packages, backend: 105 packages)

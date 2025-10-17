@@ -96,6 +96,16 @@ export function SuggestionsPanel({ currentPage, currentIdea, isProfileSetup = fa
             { type: 'video', title: 'Building Effective Habits', source: 'James Clear' },
           ],
         };
+      case 'profile':
+        return {
+          title: 'Professional Development',
+          items: [
+            { type: 'article', title: 'Building Your Personal Brand', source: 'LinkedIn Learning' },
+            { type: 'video', title: 'Networking for Entrepreneurs', source: 'TED' },
+            { type: 'article', title: 'Leadership Skills for Founders', source: 'Harvard Business Review' },
+            { type: 'video', title: 'Work-Life Balance', source: 'Y Combinator' },
+          ],
+        };
       default:
         return { title: 'Resources', items: [] };
     }

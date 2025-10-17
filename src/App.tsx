@@ -4,6 +4,7 @@ import { Sidebar } from './components/Sidebar';
 import { SuggestionsPanel } from './components/SuggestionsPanel';
 import { IntroVideoPage } from './components/IntroVideoPage';
 import { ProfileSetupPage } from './components/ProfileSetupPage';
+import { ProfilePage } from './components/ProfilePage';
 import { IdeaPage } from './components/IdeaPage';
 import { ValidationPage } from './components/ValidationPage';
 import { BusinessPlanPage } from './components/BusinessPlanPage';
@@ -33,7 +34,7 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isProfileComplete, setIsProfileComplete] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [currentPage, setCurrentPage] = useState<'idea' | 'validation' | 'business-plan' | 'planner' | 'implementation' | 'outcomes' | 'notifications'>('idea');
+  const [currentPage, setCurrentPage] = useState<'idea' | 'validation' | 'business-plan' | 'planner' | 'implementation' | 'outcomes' | 'notifications' | 'profile'>('idea');
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [currentIdea, setCurrentIdea] = useState<Idea | null>(null);
   const [selectedPlannerItem, setSelectedPlannerItem] = useState<string | null>(null);
@@ -239,6 +240,9 @@ export default function App() {
         )}
         {currentPage === 'notifications' && (
           <NotificationsPage />
+        )}
+        {currentPage === 'profile' && (
+          <ProfilePage userProfile={userProfile} />
         )}
       </main>
 
