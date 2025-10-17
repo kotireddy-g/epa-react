@@ -20,6 +20,8 @@ src/
 ├── components/
 │   ├── ui/                          # Reusable UI components (shadcn/ui)
 │   ├── figma/                       # Figma-specific components
+│   ├── LandingPage.tsx              # Marketing landing page with animations
+│   ├── FloatingHomeButton.tsx       # Floating home navigation button
 │   ├── IntroVideoPage.tsx           # Animated intro page
 │   ├── LoginPage.tsx                # Authentication page
 │   ├── ProfileSetupPage.tsx         # User profile setup
@@ -30,11 +32,11 @@ src/
 │   ├── ImplementationPage.tsx       # Implementation tracking
 │   ├── OutcomesPage.tsx             # Outcomes monitoring
 │   ├── NotificationsPage.tsx        # Notifications center
-│   ├── Sidebar.tsx                  # Navigation sidebar
+│   ├── Sidebar.tsx                  # Navigation sidebar with logout
 │   └── SuggestionsPanel.tsx         # AI suggestions panel
 ├── styles/
 │   └── globals.css                  # Global styles and Tailwind config
-├── App.tsx                          # Main app component with routing
+├── App.tsx                          # Main app component with routing & session management
 └── main.tsx                         # Entry point
 ```
 
@@ -55,16 +57,18 @@ src/
 - **Run**: Serves the built application with Vite preview server
 
 ## Key Features
-1. **Intro Video**: Animated introduction showing the journey from idea to business
-2. **Authentication**: Simple login system with username-based auth
-3. **Profile Setup**: User profile configuration (industry, expertise, goals)
-4. **Idea Management**: Submit, review, and track business ideas
-5. **Validation**: Multi-section validation with confidence scoring system
-6. **Business Planning**: Template selection and business plan generation with task tables
-7. **Planning Interface**: Organize tasks, resources, budget, hardware, timeline, goals, and partnerships
-8. **Implementation Tracking**: Timeline, calendar, and journey map views for tracking progress
-9. **Outcomes Tracking**: Monitor results, analyze achievements, and view previous idea journeys
-10. **Notifications**: Real-time updates on validation, tasks, milestones, and deadlines
+1. **Landing Page**: Professional marketing page with animated hero section and four pillars showcase
+2. **Session Persistence**: User sessions maintained across page refreshes using localStorage
+3. **Intro Video**: Animated introduction showing the journey from idea to business
+4. **Authentication**: Simple login system with username-based auth
+5. **Profile Setup**: User profile configuration (industry, expertise, goals)
+6. **Idea Management**: Submit, review, and track business ideas
+7. **Validation**: Multi-section validation with confidence scoring system
+8. **Business Planning**: Template selection and business plan generation with task tables
+9. **Planning Interface**: Organize tasks, resources, budget, hardware, timeline, goals, and partnerships
+10. **Implementation Tracking**: Timeline, calendar, and journey map views for tracking progress
+11. **Outcomes Tracking**: Monitor results, analyze achievements, and view previous idea journeys
+12. **Notifications**: Real-time updates on validation, tasks, milestones, and deadlines
 
 ## Design System
 - Uses shadcn/ui components built on Radix UI primitives
@@ -73,9 +77,36 @@ src/
 - Responsive design with mobile considerations
 - Custom animations with Framer Motion
 
-## Recent Changes (October 16, 2025)
+## Recent Changes
 
-### GitHub Import Setup - Replit Environment Configuration
+### October 17, 2025 - Landing Page & Session Management
+- **Landing Page Implementation**:
+  - Added comprehensive landing page (LandingPage.tsx) with animations using Framer Motion
+  - Hero section with animated circular diagram showing four pillars of execution
+  - Navigation menu with sections: Pillars, How It Works, Why Now, Services, About
+  - Login and Sign Up modals for authentication flow
+  - Professional marketing copy highlighting value proposition
+  
+- **Session Persistence**:
+  - Implemented localStorage-based session management
+  - User sessions persist across page refreshes
+  - On refresh, authenticated users return to home (Idea page) instead of landing/login
+  - Session includes authentication status and user profile data
+  
+- **Navigation Improvements**:
+  - Home button now navigates to Idea page (not intro screen)
+  - Added FloatingHomeButton component (red circular button, bottom-right)
+  - Sidebar updated with logout functionality
+  - Logout clears session and returns to landing page
+  
+- **Theme Updates**:
+  - Updated color scheme to red accent (#dc2626) matching landing page
+  - Primary colors changed from blue to red throughout application
+  - Sidebar branding updated: "Execution Planner" with "The Best Way How" tagline
+  - Consistent red theme across buttons, links, and interactive elements
+  - Added Tailwind directives to globals.css for proper styling
+
+### October 16, 2025 - GitHub Import Setup
 - Successfully imported project from GitHub (https://github.com/kotireddy-g/epa.git)
 - Installed all npm dependencies:
   - Frontend: 495 packages (React, Vite, Radix UI, Tailwind CSS, etc.)
