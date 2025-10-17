@@ -79,6 +79,26 @@ src/
 
 ## Recent Changes
 
+### October 17, 2025 - External API Authentication & Dialog Styling Fix
+- **Dialog Styling Resolution**:
+  - Fixed critical dialog background visibility issue by converting all CSS color variables to HSL format
+  - Changed from mixed formats (hex/oklch) to consistent `hsl(H S% L%)` notation in globals.css
+  - Updated Tailwind configuration to properly reference CSS variables with `hsl()` function
+  - Login and Sign Up dialogs now display with proper white/dark backgrounds
+  
+- **External Authentication Integration**:
+  - Created `authApi.ts` service to integrate with external login API (http://192.168.1.111:8089/accounts/login/)
+  - Implemented token-based authentication with access and refresh tokens stored in localStorage
+  - Enhanced session management to persist user data, profile information, and authentication tokens
+  - Updated API service (`api.ts`) to include Authorization headers with Bearer tokens for all requests
+  - Integrated real API into LandingPage login modal with proper error handling and loading states
+  - Removed unused imports from LandingPage component for cleaner code
+  
+- **Security Measures**:
+  - Addressed critical security issue by removing exposed JWT tokens from committed files
+  - Implemented proper token storage using localStorage with getters for secure access
+  - All API requests now authenticated with access tokens from session storage
+
 ### October 17, 2025 - Replit Environment Setup (GitHub Import)
 - **Project Successfully Imported and Configured**:
   - Installed all npm dependencies (frontend: 495 packages, backend: 105 packages)
