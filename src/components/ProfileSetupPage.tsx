@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Briefcase, Building2, Users, Check } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -27,6 +27,36 @@ export function ProfileSetupPage({ onComplete }: ProfileSetupPageProps) {
     companySize: '',
     fundingStage: '',
   });
+
+  // Load saved profile data from localStorage
+  useEffect(() => {
+    const sessionData = localStorage.getItem('executionPlannerSession');
+    if (sessionData) {
+      try {
+        const session = JSON.parse(sessionData);
+        const profileData = session.userProfile;
+        if (profileData) {
+          setFormData({
+            fullName: profileData.fullName || '',
+            email: profileData.email || '',
+            companyLink: profileData.companyLink || '',
+            currentRole: profileData.currentRole || '',
+            currentIndustry: profileData.currentIndustry || '',
+            businessType: profileData.businessType || '',
+            linkedinProfile: profileData.linkedinProfile || '',
+            yearsOfExperience: profileData.yearsOfExperience || '',
+            companySize: profileData.companySize || '',
+            fundingStage: profileData.fundingStage || '',
+          });
+          if (profileData.userType) {
+            setSelectedType(profileData.userType);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading profile data:', error);
+      }
+    }
+  }, []);
 
   const userTypes = [
     {

@@ -5,6 +5,9 @@ import path from 'path'
 export default defineConfig({
   plugins: [react()],
   
+  // Base path for production deployment
+  base: '/epa-project/',
+  
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './'),
@@ -15,12 +18,12 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5000,
     strictPort: true,
-    allowedHosts: true,
     hmr: {
       protocol: 'wss',
       host: process.env.REPLIT_DEV_DOMAIN || 'localhost',
       clientPort: 443,
     },
+    allowedHosts: ['all'],
     proxy: {
       '/api': {
         target: 'http://localhost:3001',

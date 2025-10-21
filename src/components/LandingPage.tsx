@@ -736,7 +736,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
               </div>
             )}
             <div>
-              <Label htmlFor="login-email">Email</Label>
+              <Label htmlFor="login-email" className="mb-2 block">Email</Label>
               <Input 
                 id="login-email" 
                 type="email" 
@@ -747,7 +747,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
               />
             </div>
             <div>
-              <Label htmlFor="login-password">Password</Label>
+              <Label htmlFor="login-password" className="mb-2 block">Password</Label>
               <Input 
                 id="login-password" 
                 type="password" 
@@ -783,15 +783,15 @@ export function LandingPage({ onLogin }: LandingPageProps) {
 
           <div className="space-y-4 mt-4">
             <div>
-              <Label htmlFor="signup-name">Full Name</Label>
+              <Label htmlFor="signup-name" className="mb-3 block">Full Name</Label>
               <Input id="signup-name" type="text" placeholder="Enter your name" />
             </div>
             <div>
-              <Label htmlFor="signup-email">Email</Label>
+              <Label htmlFor="signup-email" className="mb-3 block">Email</Label>
               <Input id="signup-email" type="email" placeholder="Enter your email" />
             </div>
             <div>
-              <Label htmlFor="signup-password">Password</Label>
+              <Label htmlFor="signup-password" className="mb-3 block">Password</Label>
               <Input id="signup-password" type="password" placeholder="Create a password" />
             </div>
             <Button 

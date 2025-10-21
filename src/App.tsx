@@ -39,7 +39,8 @@ export default function App() {
   const [currentIdea, setCurrentIdea] = useState<Idea | null>(null);
   const [selectedPlannerItem, setSelectedPlannerItem] = useState<string | null>(null);
   const [showCompanyNameDialog, setShowCompanyNameDialog] = useState(false);
-  const [companyName, setCompanyName] = useState<string>('');
+  const [, setCompanyName] = useState<string>('');
+  const [ideaPageKey, setIdeaPageKey] = useState(0);
 
   // Load session from localStorage on mount
   useEffect(() => {
@@ -129,11 +130,16 @@ export default function App() {
 
   const navigateToPage = (page: typeof currentPage) => {
     setCurrentPage(page);
+    // Reset idea page when navigating to it
+    if (page === 'idea') {
+      setIdeaPageKey(prev => prev + 1);
+    }
   };
 
   const handleHomeClick = () => {
-    // Navigate to Idea page instead of resetting
+    // Navigate to Idea page and reset it
     setCurrentPage('idea');
+    setIdeaPageKey(prev => prev + 1);
   };
 
   const handleLogout = () => {
@@ -197,6 +203,7 @@ export default function App() {
       <main className="flex-1 overflow-auto">
         {currentPage === 'idea' && (
           <IdeaPage 
+            key={ideaPageKey}
             ideas={ideas} 
             onIdeaSubmit={handleIdeaSubmit}
             onIdeaAccept={handleIdeaAccept}
@@ -232,7 +239,7 @@ export default function App() {
         {currentPage === 'outcomes' && currentIdea && (
           <OutcomesPage 
             idea={currentIdea}
-            onTaskClick={(taskId) => {
+            onTaskClick={() => {
               setSelectedPlannerItem('tasks');
               setCurrentPage('implementation');
             }}
