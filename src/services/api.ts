@@ -62,6 +62,12 @@ class ApiService {
     });
 
     if (!response.ok) {
+      // If unauthorized, clear the session
+      if (response.status === 401) {
+        authApi.logout();
+        window.location.reload(); // Reload to show login page
+      }
+      
       const error = await response.json().catch(() => ({ error: 'Request failed' }));
       throw new Error(error.error || `HTTP ${response.status}`);
     }

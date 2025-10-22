@@ -14,6 +14,7 @@ import { OutcomesPage } from './components/OutcomesPage';
 import { NotificationsPage } from './components/NotificationsPage';
 import { CompanyNameDialog } from './components/CompanyNameDialog';
 import { FloatingHomeButton } from './components/FloatingHomeButton';
+import { authApi } from './services/authApi';
 
 export interface Idea {
   id: string;
@@ -62,11 +63,29 @@ export default function App() {
   // Save session to localStorage whenever authentication state changes
   useEffect(() => {
     if (isAuthenticated || isProfileComplete) {
-      const sessionData = {
+      // Get existing session data to preserve tokens
+      const existingSession = localStorage.getItem('executionPlannerSession');
+      let sessionData: any = {
         isAuthenticated,
         isProfileComplete,
         userProfile,
       };
+      
+      // Preserve tokens if they exist
+      if (existingSession) {
+        try {
+          const existing = JSON.parse(existingSession);
+          if (existing.tokens) {
+            sessionData.tokens = existing.tokens;
+          }
+          if (existing.user) {
+            sessionData.user = existing.user;
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+      
       localStorage.setItem('executionPlannerSession', JSON.stringify(sessionData));
     }
   }, [isAuthenticated, isProfileComplete, userProfile]);
@@ -144,6 +163,7 @@ export default function App() {
 
   const handleLogout = () => {
     // Clear session and redirect to landing page
+    authApi.logout(); // Clear tokens from authApi service
     localStorage.removeItem('executionPlannerSession');
     setShowLandingPage(true);
     setShowIntro(false);

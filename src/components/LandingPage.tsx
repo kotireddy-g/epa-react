@@ -1,10 +1,15 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, useScroll } from 'framer-motion';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
-import { Eye, Brain, FileText, Zap, Play, Box, Shield, Rocket, ArrowLeftRight, CheckCircle2, TrendingUp, Target, Lightbulb, Briefcase, Package, Award } from 'lucide-react';
+import { 
+  Lightbulb, Brain, TrendingUp, Users, Target, CheckCircle, 
+  BarChart, Briefcase, GraduationCap, Rocket,
+  Play, ArrowRight, ChevronDown, DollarSign, Network,
+  FileText, Calendar, TrendingDown
+} from 'lucide-react';
 import { authApi } from '../services/authApi';
 
 interface LandingPageProps {
@@ -15,77 +20,45 @@ export function LandingPage({ onLogin }: LandingPageProps) {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showSignUpModal, setShowSignUpModal] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [activePillar, setActivePillar] = useState(0);
-  const [activeStage, setActiveStage] = useState(0);
+  const [activeStep, setActiveStep] = useState(0);
   
+  // Authentication state - preserved from original
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const heroRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll();
-  const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
-  const scale = useTransform(scrollYProgress, [0, 0.2], [1, 0.95]);
+  useScroll();
+
+  const journeySteps = [
+    { icon: Lightbulb, label: 'Idea', color: 'yellow' },
+    { icon: Brain, label: 'Validation', color: 'blue' },
+    { icon: FileText, label: 'Plan', color: 'green' },
+    { icon: Rocket, label: 'Execute', color: 'purple' },
+    { icon: Target, label: 'Success', color: 'red' }
+  ];
+
+  const validationCards = [
+    { icon: Users, title: 'Persona Validation', desc: "Who's your real customer?" },
+    { icon: DollarSign, title: 'Financial Validation', desc: 'Is it scalable?' },
+    { icon: Lightbulb, title: 'Idea Validation', desc: 'Is it unique & feasible?' },
+    { icon: Network, title: 'Network Validation', desc: 'Who supports you?' }
+  ];
+
+  const audienceCards = [
+    { icon: Briefcase, title: 'Startup Owners', desc: 'Turn concepts into pitch-ready plans' },
+    { icon: Users, title: 'Professionals & Leaders', desc: 'Validate strategies before execution' },
+    { icon: GraduationCap, title: 'Job Seekers', desc: 'Create innovation portfolios for employers' },
+    { icon: Brain, title: 'Entrepreneurs', desc: 'Track multiple projects with AI precision' }
+  ];
 
   const pillars = [
-    { icon: Eye, title: 'See Clearly', description: 'Validate your vision with structured thinking', position: 'top' },
-    { icon: Brain, title: 'Think Deeply', description: 'Strategic analysis for smart decisions', position: 'right' },
-    { icon: FileText, title: 'Plan Smoothly', description: 'Break down complexity into actionable steps', position: 'bottom' },
-    { icon: Zap, title: 'Move Boldly', description: 'Execute with confidence and track progress', position: 'left' }
+    { title: 'AI-Driven Clarity', desc: 'Deep insights, not just feedback' },
+    { title: 'Actionable Planning', desc: 'From concept to execution roadmap' },
+    { title: 'Real-Time Tracking', desc: 'Monitor progress with AI guidance' },
+    { title: 'Measurable Outcomes', desc: 'Learn and optimize continuously' }
   ];
 
-  const stages = [
-    { name: 'IDEA', icon: Lightbulb },
-    { name: 'VISION', icon: Eye },
-    { name: 'PROJECT', icon: Briefcase },
-    { name: 'PRODUCT', icon: Package },
-    { name: 'CAREER', icon: Award }
-  ];
-
-  const flowSteps = [
-    { icon: Box, title: 'Foundation', color: 'red' },
-    { icon: Shield, title: 'Validation', color: 'red' },
-    { icon: Rocket, title: 'Execution', color: 'red' },
-    { icon: ArrowLeftRight, title: 'Feedback', color: 'red' }
-  ];
-
-  const aboutCards = [
-    {
-      title: 'Founder',
-      content: "We've been in the trenches where vision meets chaos. So we built a system that makes execution repeatable. This is built for the builder in you."
-    },
-    {
-      title: 'Vision',
-      content: "A world where anyone can act on their ideas. Where tools turn into transformations. Where goals don't die with good intentions."
-    },
-    {
-      title: 'Mission',
-      content: "We're here to make execution a daily habit. With simplicity, structure, and self-belief. Your big leap starts with a small loop."
-    },
-    {
-      title: 'Value Proposition',
-      content: "From chaos to clarity in minutes. From overwhelm to outcomes that ship. From guesswork to guided action."
-    }
-  ];
-
-  // Circular animation rotation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActivePillar((prev) => (prev + 1) % pillars.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Stage cycling animation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveStage((prev) => (prev + 1) % stages.length);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Scroll detection
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
@@ -94,6 +67,14 @@ export function LandingPage({ onLogin }: LandingPageProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveStep((prev) => (prev + 1) % journeySteps.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [journeySteps.length]);
+
+  // Authentication logic - preserved from original
   const handleLogin = async () => {
     setLoginError('');
     setIsLoggingIn(true);
@@ -115,22 +96,12 @@ export function LandingPage({ onLogin }: LandingPageProps) {
     }
   };
 
-  // Calculate positions for pillars on circle
-  const getPillarPosition = (index: number) => {
-    const angle = (index * 90 - 90) * (Math.PI / 180);
-    const radius = 42; // percentage
-    return {
-      x: 50 + radius * Math.cos(angle),
-      y: 50 + radius * Math.sin(angle)
-    };
-  };
-
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
       <motion.header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled ? 'bg-white shadow-md' : 'bg-transparent'
+          isScrolled ? 'bg-white shadow-lg' : 'bg-white/95 backdrop-blur-sm'
         }`}
         initial={{ y: -100 }}
         animate={{ y: 0 }}
@@ -138,27 +109,24 @@ export function LandingPage({ onLogin }: LandingPageProps) {
       >
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            {/* Logo */}
             <div className="flex flex-col">
               <motion.h1 
-                className="text-2xl text-black"
+                className="text-2xl text-black cursor-pointer"
                 whileHover={{ scale: 1.05 }}
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
-                Execution Planner
+                ExecutionPlanner
               </motion.h1>
-              <span className="text-xs text-gray-600">The Best Way How</span>
+              <span className="text-xs text-gray-600">From Idea to Impact. Powered by AI.</span>
             </div>
 
-            {/* Navigation */}
             <nav className="hidden md:flex items-center gap-8">
-              <a href="#pillars" className="text-gray-700 hover:text-red-600 transition-colors">Pillars</a>
               <a href="#how-it-works" className="text-gray-700 hover:text-red-600 transition-colors">How It Works</a>
-              <a href="#why-now" className="text-gray-700 hover:text-red-600 transition-colors">Why Now</a>
-              <a href="#services" className="text-gray-700 hover:text-red-600 transition-colors">Services</a>
-              <a href="#about" className="text-gray-700 hover:text-red-600 transition-colors">About</a>
+              <a href="#validation" className="text-gray-700 hover:text-red-600 transition-colors">Validation</a>
+              <a href="#who-its-for" className="text-gray-700 hover:text-red-600 transition-colors">Who It's For</a>
+              <a href="#why-us" className="text-gray-700 hover:text-red-600 transition-colors">Why Us</a>
             </nav>
 
-            {/* Auth Buttons */}
             <div className="flex items-center gap-3">
               <Button 
                 variant="ghost" 
@@ -171,7 +139,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
                 onClick={() => setShowSignUpModal(true)}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
-                Sign Up
+                Start Free
               </Button>
             </div>
           </div>
@@ -179,11 +147,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
       </motion.header>
 
       {/* Hero Section */}
-      <motion.section 
-        ref={heroRef}
-        className="relative min-h-screen flex items-center justify-center pt-20 px-6 bg-gradient-to-b from-gray-50 to-white"
-        style={{ opacity, scale }}
-      >
+      <section className="relative min-h-screen flex items-center justify-center pt-20 px-6 bg-gradient-to-b from-gray-50 to-white overflow-hidden">
         <div className="max-w-7xl mx-auto w-full grid md:grid-cols-2 gap-12 items-center">
           {/* Left Content */}
           <motion.div
@@ -191,20 +155,35 @@ export function LandingPage({ onLogin }: LandingPageProps) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
+            <motion.div
+              className="inline-block px-4 py-2 bg-red-50 rounded-full mb-6"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <span className="text-sm text-red-600">AI-Powered Execution Platform</span>
+            </motion.div>
+            
             <h1 className="text-5xl md:text-6xl text-black mb-6 leading-tight">
-              The Best Way How to{' '}
-              <span className="text-red-600">Turn Ideas into Results</span>
+              Your Idea Deserves a Plan.{' '}
+              <span className="text-red-600">Let AI Show You the Path to Success.</span>
             </h1>
-            <p className="text-xl text-gray-600 mb-8">
-              Execution Planner helps founders and leaders move from idea to execution with clarity, confidence, and continuous feedback.
+            
+            <p className="text-xl text-gray-600 mb-4">
+              You dream. AI executes.
             </p>
+            <p className="text-lg text-gray-600 mb-8">
+              From your first spark of inspiration to your final milestone — ExecutionPlanner helps you build, validate, plan, and track your journey like never before.
+            </p>
+            
             <div className="flex flex-col sm:flex-row gap-4">
               <Button 
                 size="lg" 
-                className="bg-red-600 hover:bg-red-700 text-white text-lg px-8"
+                className="bg-red-600 hover:bg-red-700 text-white text-lg px-8 gap-2"
                 onClick={() => setShowSignUpModal(true)}
               >
-                Try Free for 30 Days
+                Start Your Journey
+                <ArrowRight className="w-5 h-5" />
               </Button>
               <Button 
                 size="lg" 
@@ -212,516 +191,661 @@ export function LandingPage({ onLogin }: LandingPageProps) {
                 className="text-lg px-8 gap-2 border-black hover:bg-black hover:text-white"
               >
                 <Play className="w-5 h-5" />
-                Watch Demo
+                See How It Works
               </Button>
             </div>
           </motion.div>
 
-          {/* Right - Circular Animation */}
+          {/* Right - Animated Journey */}
           <motion.div
             className="relative h-[500px] flex items-center justify-center"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
-            {/* Central Circle with Text */}
-            <div className="absolute inset-0 flex items-center justify-center z-10">
-              <div className="w-64 h-64 rounded-full bg-gradient-to-br from-gray-900 to-black flex items-center justify-center shadow-2xl">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activePillar}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{ duration: 0.5 }}
-                    className="text-center px-6"
-                  >
-                    <div className="text-xs text-gray-400 mb-2 uppercase tracking-wide">Value Tag</div>
-                    <h3 className="text-2xl text-white mb-2">Best Way<br/>Execution</h3>
-                    <p className="text-xs text-gray-300">From fuzzy to focused</p>
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-            </div>
-
-            {/* Circular Dashed Path */}
-            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 500 500">
-              <circle
-                cx="250"
-                cy="250"
-                r="210"
-                fill="none"
-                stroke="#e5e7eb"
-                strokeWidth="2"
-                strokeDasharray="8 8"
-              />
-            </svg>
-
-            {/* Pillars around circle */}
-            {pillars.map((pillar, index) => {
-              const pos = getPillarPosition(index);
-
-              return (
-                <motion.div
-                  key={index}
-                  className="absolute"
-                  style={{
-                    left: `${pos.x}%`,
-                    top: `${pos.y}%`,
-                    transform: 'translate(-50%, -50%)'
-                  }}
-                  animate={{
-                    scale: activePillar === index ? 1.1 : 1,
-                  }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <div className={`flex items-center gap-3 ${
-                    index === 0 ? 'flex-col' : 
-                    index === 1 ? 'flex-row' : 
-                    index === 2 ? 'flex-col' : 
-                    'flex-row-reverse'
-                  }`}>
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${
-                      activePillar === index 
-                        ? 'bg-red-600 scale-110' 
-                        : 'bg-red-50'
-                    }`}>
-                      <pillar.icon className={`w-6 h-6 transition-colors ${
-                        activePillar === index ? 'text-white' : 'text-red-600'
-                      }`} />
-                    </div>
-                    <div className={`bg-white px-4 py-2 rounded-lg shadow-md border border-gray-200 whitespace-nowrap ${
-                      index === 0 || index === 2 ? 'text-center' : ''
-                    }`}>
-                      <p className="text-sm text-black">{pillar.title}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-
-            {/* Moving Orb with Bulb Icon - larger size */}
-            <motion.div
-              className="absolute"
-              style={{
-                top: '50%',
-                left: '50%',
-              }}
-              animate={{
-                rotate: 360
-              }}
-              transition={{
-                duration: 12,
-                repeat: Infinity,
-                ease: 'linear'
-              }}
-            >
-              <div 
-                className="absolute w-12 h-12 rounded-full bg-red-600 shadow-2xl flex items-center justify-center"
-                style={{
-                  top: '-210px',
-                  left: '-24px'
+            {/* Transformation Animation */}
+            <div className="relative w-full h-full flex items-center justify-center">
+              {/* Idea Bulb to Dashboard Animation */}
+              <motion.div
+                className="absolute inset-0"
+                animate={{
+                  scale: [1, 1.2, 1],
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: 'easeInOut'
                 }}
               >
-                <Lightbulb className="w-6 h-6 text-yellow-300 fill-yellow-300" />
-                <div className="absolute inset-0 rounded-full bg-red-600 blur-md opacity-50" />
-              </div>
-            </motion.div>
-          </motion.div>
-        </div>
-      </motion.section>
-
-      {/* Pillars Section */}
-      <section id="pillars" className="py-24 px-6 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <motion.h2 
-            className="text-4xl text-center text-black mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            Four Pillars of Execution
-          </motion.h2>
-
-          <div className="grid md:grid-cols-4 gap-8">
-            {pillars.map((pillar, index) => (
-              <motion.div
-                key={index}
-                className="bg-white p-8 rounded-2xl border-2 border-gray-200 hover:border-red-600 hover:shadow-xl transition-all duration-300"
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                whileHover={{ y: -10 }}
-              >
-                <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-6">
-                  <pillar.icon className="w-8 h-8 text-red-600" />
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <Lightbulb className="w-32 h-32 text-yellow-500 fill-yellow-200" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-48 h-48 rounded-full bg-yellow-100 blur-3xl opacity-50" />
+                  </div>
                 </div>
-                <h3 className="text-xl text-black mb-3">{pillar.title}</h3>
-                <p className="text-gray-600">{pillar.description}</p>
               </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* How It Works Section */}
-      <section id="how-it-works" className="py-24 px-6 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <motion.h2 
-            className="text-4xl text-center text-black mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            How It Works
-          </motion.h2>
-
-          <div className="max-w-6xl mx-auto">
-            {/* Stage List on Left + Flow Steps */}
-            <div className="flex items-start gap-8">
-              {/* Left Side - Stage List */}
-              <motion.div
-                className="flex-shrink-0 space-y-3"
-                initial={{ opacity: 0, x: -50 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-              >
-                {stages.map((stage, index) => {
-                  const StageIcon = stage.icon;
+              {/* Journey Steps */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <svg className="w-full h-full" viewBox="0 0 500 500">
+                  <circle
+                    cx="250"
+                    cy="250"
+                    r="180"
+                    fill="none"
+                    stroke="#e5e7eb"
+                    strokeWidth="2"
+                    strokeDasharray="4 4"
+                  />
+                </svg>
+                
+                {journeySteps.map((step, index) => {
+                  const angle = (index * 72 - 90) * (Math.PI / 180);
+                  const x = 250 + 180 * Math.cos(angle);
+                  const y = 250 + 180 * Math.sin(angle);
+                  
                   return (
-                    <AnimatePresence key={stage.name} mode="wait">
-                      <motion.div
-                        className={`px-6 py-3 rounded-lg border-2 transition-all ${
-                          activeStage === index
-                            ? 'bg-yellow-100 border-yellow-500 shadow-md'
-                            : 'bg-white border-gray-200'
-                        }`}
-                        animate={{
-                          scale: activeStage === index ? 1.05 : 1,
-                        }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <StageIcon className={`w-5 h-5 ${
-                            activeStage === index ? 'text-yellow-600' : 'text-gray-400'
-                          }`} />
-                          <span className={`text-sm ${
-                            activeStage === index ? 'text-black' : 'text-gray-600'
-                          }`}>
-                            {stage.name}
-                          </span>
-                        </div>
-                      </motion.div>
-                    </AnimatePresence>
+                    <motion.div
+                      key={index}
+                      className="absolute"
+                      style={{
+                        left: `${(x / 500) * 100}%`,
+                        top: `${(y / 500) * 100}%`,
+                        transform: 'translate(-50%, -50%)'
+                      }}
+                      animate={{
+                        scale: activeStep === index ? 1.3 : 1,
+                        opacity: activeStep === index ? 1 : 0.6
+                      }}
+                      transition={{ duration: 0.5 }}
+                    >
+                      <div className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg ${
+                        activeStep === index ? 'bg-red-600' : 'bg-white border-2 border-gray-200'
+                      }`}>
+                        <step.icon className={`w-8 h-8 ${
+                          activeStep === index ? 'text-white' : 'text-gray-600'
+                        }`} />
+                      </div>
+                      <div className="absolute top-full mt-2 whitespace-nowrap text-center w-full">
+                        <span className="text-xs text-gray-700">{step.label}</span>
+                      </div>
+                    </motion.div>
                   );
                 })}
-              </motion.div>
-
-              {/* Right Side - Flow Steps */}
-              <div className="flex-1">
-                <div className="relative">
-                  <div className="grid grid-cols-4 gap-6">
-                    {flowSteps.map((step, index) => (
-                      <motion.div
-                        key={index}
-                        className="relative"
-                        initial={{ opacity: 0, y: 50 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.6, delay: index * 0.15 }}
-                      >
-                        {/* Box with Icon Only */}
-                        <div className="bg-white p-8 rounded-3xl border-2 border-gray-300 hover:border-red-600 transition-all duration-300 h-40 flex items-center justify-center relative">
-                          <step.icon className="w-16 h-16 text-black" />
-                        </div>
-
-                        {/* Solid line from center top */}
-                        {index < flowSteps.length - 1 && (
-                          <>
-                            <svg 
-                              className="absolute top-1/2 left-full w-6 overflow-visible"
-                              style={{ zIndex: 1, height: '2px', marginTop: '-40px' }}
-                            >
-                              <line
-                                x1="0"
-                                y1="0"
-                                x2="24"
-                                y2="0"
-                                stroke="#000"
-                                strokeWidth="2"
-                              />
-                            </svg>
-                            {index === 0 && (
-                              <span className="absolute top-1/4 left-full ml-8 text-xs text-black whitespace-nowrap">
-                                Validation
-                              </span>
-                            )}
-                            {index === 1 && (
-                              <span className="absolute top-1/4 left-full ml-8 text-xs text-black whitespace-nowrap">
-                                Strategy Loop
-                              </span>
-                            )}
-                            {index === 2 && (
-                              <span className="absolute top-1/4 left-full ml-8 text-xs text-black whitespace-nowrap">
-                                Outcome Loop
-                              </span>
-                            )}
-                          </>
-                        )}
-
-                        {/* Animated dashed line from center bottom */}
-                        {index < flowSteps.length - 1 && (
-                          <>
-                            <svg 
-                              className="absolute top-1/2 left-full w-6 overflow-visible"
-                              style={{ zIndex: 1, height: '2px', marginTop: '40px' }}
-                            >
-                              <motion.line
-                                x1="0"
-                                y1="0"
-                                x2="24"
-                                y2="0"
-                                stroke="#666"
-                                strokeWidth="2"
-                                strokeDasharray="4 4"
-                                initial={{ strokeDashoffset: 0 }}
-                                animate={{ strokeDashoffset: -8 }}
-                                transition={{
-                                  duration: 1,
-                                  repeat: Infinity,
-                                  ease: 'linear'
-                                }}
-                              />
-                            </svg>
-                            <span className="absolute top-3/4 left-full ml-8 text-xs text-gray-600 whitespace-nowrap">
-                              {index === 0 ? 'Enhance Vision' : index === 1 ? 'Update Loop' : 'Feedback'}
-                            </span>
-                          </>
-                        )}
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  {/* Execution Speed Loop - Both sides arrow */}
-                  <motion.div
-                    className="mt-12 flex items-center justify-center gap-4"
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: 0.6 }}
-                  >
-                    {/* Left Arrow */}
-                    <svg width="60" height="20" className="rotate-180">
-                      <defs>
-                        <marker
-                          id="arrowhead-left"
-                          markerWidth="10"
-                          markerHeight="10"
-                          refX="5"
-                          refY="5"
-                          orient="auto"
-                        >
-                          <polygon points="0 0, 10 5, 0 10" fill="#000" />
-                        </marker>
-                      </defs>
-                      <line
-                        x1="10"
-                        y1="10"
-                        x2="60"
-                        y2="10"
-                        stroke="#000"
-                        strokeWidth="2"
-                        strokeDasharray="4 4"
-                        markerEnd="url(#arrowhead-left)"
-                      />
-                    </svg>
-
-                    {/* Text */}
-                    <span className="text-black px-6 py-2 text-sm whitespace-nowrap">
-                      PREPARED EXECUTION SPEED LOOP
-                    </span>
-
-                    {/* Right Arrow */}
-                    <svg width="60" height="20">
-                      <defs>
-                        <marker
-                          id="arrowhead-right"
-                          markerWidth="10"
-                          markerHeight="10"
-                          refX="5"
-                          refY="5"
-                          orient="auto"
-                        >
-                          <polygon points="0 0, 10 5, 0 10" fill="#000" />
-                        </marker>
-                      </defs>
-                      <line
-                        x1="0"
-                        y1="10"
-                        x2="50"
-                        y2="10"
-                        stroke="#000"
-                        strokeWidth="2"
-                        strokeDasharray="4 4"
-                        markerEnd="url(#arrowhead-right)"
-                      />
-                    </svg>
-
-                    {/* Animated dots */}
-                    <div className="absolute bottom-0 flex gap-2">
-                      {[...Array(3)].map((_, i) => (
-                        <motion.div
-                          key={i}
-                          className="w-2 h-2 rounded-full bg-red-600"
-                          animate={{
-                            scale: [1, 1.5, 1],
-                            opacity: [0.5, 1, 0.5]
-                          }}
-                          transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            delay: i * 0.3
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </motion.div>
-                </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
+
+        {/* Scroll Indicator */}
+        <motion.div
+          className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
+          animate={{ y: [0, 10, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          <ChevronDown className="w-8 h-8 text-gray-400" />
+        </motion.div>
       </section>
 
-      {/* Why Now Section */}
-      <section id="why-now" className="py-24 px-6 bg-white">
+      {/* Problem Section */}
+      <section className="py-24 px-6 bg-black text-white">
         <div className="max-w-7xl mx-auto">
-          <motion.h2 
-            className="text-4xl text-center text-black mb-16"
+          <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
+            className="text-center mb-16"
           >
-            Why This App Matters Now
-          </motion.h2>
+            <h2 className="text-4xl md:text-5xl mb-6">
+              Most Great Ideas Fail — Not Because They're Bad,{' '}
+              <span className="text-red-500">But Because They're Unplanned.</span>
+            </h2>
+          </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            {/* Left - Chaos */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="relative"
+            >
+              <div className="bg-gray-900 p-8 rounded-2xl border border-red-900 relative overflow-hidden">
+                <TrendingDown className="w-16 h-16 text-red-500 mb-4" />
+                <h3 className="text-2xl mb-4 text-red-400">Without ExecutionPlanner</h3>
+                <ul className="space-y-3 text-gray-400">
+                  <li>❌ 90% of startups fail due to poor planning</li>
+                  <li>❌ Unclear validation and weak strategy</li>
+                  <li>❌ Scattered notes and missed opportunities</li>
+                  <li>❌ No structured path from idea to execution</li>
+                </ul>
+              </div>
+            </motion.div>
+
+            {/* Right - Clarity */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <div className="bg-gradient-to-br from-red-600 to-red-700 p-8 rounded-2xl relative overflow-hidden">
+                <TrendingUp className="w-16 h-16 text-white mb-4" />
+                <h3 className="text-2xl mb-4">With ExecutionPlanner</h3>
+                <ul className="space-y-3">
+                  <li>✓ AI-driven validation and insights</li>
+                  <li>✓ Clear execution roadmap with milestones</li>
+                  <li>✓ Real-time progress tracking</li>
+                  <li>✓ Turn inspiration into measurable action</li>
+                </ul>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Product Journey Section */}
+      <section id="how-it-works" className="py-24 px-6 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl text-black mb-6">
+              An Intelligent Companion That Grows Your Idea Step-by-Step
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              ExecutionPlanner isn't just an app — it's your AI-powered Execution Partner
+            </p>
+          </motion.div>
+
+          <div className="space-y-12">
             {[
-              {
-                icon: TrendingUp,
-                title: 'AI-Driven Planning',
-                description: 'Leverage intelligent insights to make data-driven decisions faster than ever.'
-              },
-              {
-                icon: CheckCircle2,
-                title: 'Faster Validation',
-                description: 'Validate your ideas quickly with structured frameworks and proven methodologies.'
-              },
-              {
-                icon: Target,
-                title: 'Measurable Results',
-                description: 'Track progress with clear metrics and adapt your strategy in real-time.'
-              }
+              { icon: Lightbulb, title: 'Write Your Idea', desc: 'Capture your concept in your words', color: 'yellow' },
+              { icon: Brain, title: 'AI Analysis', desc: 'Get instant feedback on strengths, weaknesses, and opportunities', color: 'purple' },
+              { icon: CheckCircle, title: 'Validation Engine', desc: 'Validate through Persona, Financial, Network & Market checks', color: 'green' },
+              { icon: FileText, title: 'Business Plan Builder', desc: 'Turn validated ideas into Lean Canvas Models with AI templates', color: 'blue' },
+              { icon: Calendar, title: 'Execution Planner', desc: 'Map out milestones, sprints, and daily actions with AI', color: 'indigo' },
+              { icon: BarChart, title: 'Progress Tracker', desc: 'Measure implementation and get continuous feedback', color: 'orange' },
+              { icon: Target, title: 'Outcome Analyzer', desc: 'Track what worked and optimize your next move', color: 'red' }
             ].map((item, index) => (
               <motion.div
                 key={index}
-                className="bg-white p-8 rounded-2xl border-2 border-gray-200 hover:border-red-600 hover:shadow-xl transition-all"
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
+                whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
+                className={`flex items-center gap-8 ${index % 2 === 1 ? 'flex-row-reverse' : ''}`}
               >
-                <div className="w-14 h-14 rounded-full bg-red-600 flex items-center justify-center mb-6">
-                  <item.icon className="w-7 h-7 text-white" />
+                <div className={`w-24 h-24 rounded-full bg-${item.color}-100 flex items-center justify-center flex-shrink-0`}>
+                  <item.icon className={`w-12 h-12 text-${item.color}-600`} />
                 </div>
-                <h3 className="text-xl text-black mb-3">{item.title}</h3>
-                <p className="text-gray-600">{item.description}</p>
+                <div className="flex-1">
+                  <h3 className="text-2xl text-black mb-2">{item.title}</h3>
+                  <p className="text-lg text-gray-600">{item.desc}</p>
+                </div>
               </motion.div>
             ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mt-12"
+          >
+            <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white" onClick={() => setShowSignUpModal(true)}>
+              Try AI Analysis Free
+            </Button>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* AI Analysis Section */}
+      <section className="py-24 px-6 bg-gradient-to-b from-gray-50 to-white">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl text-black mb-6">
+              Not Just Feedback. <span className="text-red-600">Deep AI Insights.</span>
+            </h2>
+            <p className="text-xl text-gray-600">Our AI doesn't just grade your idea — it understands it.</p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 gap-12">
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="space-y-6"
+            >
+              {[
+                'Identifies clarity gaps and missing logic',
+                'Highlights key strengths for investors',
+                'Suggests refinements for better market fit',
+                'Explains why clarity matters'
+              ].map((item, index) => (
+                <div key={index} className="flex items-start gap-4">
+                  <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
+                  <p className="text-lg text-gray-700">{item}</p>
+                </div>
+              ))}
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="bg-white p-8 rounded-2xl shadow-xl border-2 border-gray-200"
+            >
+              <Brain className="w-16 h-16 text-purple-600 mb-4" />
+              <h3 className="text-xl text-black mb-4">AI Analysis Dashboard</h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700">Clarity Score</span>
+                  <span className="text-green-600">92%</span>
+                </div>
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-green-600 w-[92%]" />
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700">Market Fit</span>
+                  <span className="text-blue-600">85%</span>
+                </div>
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-600 w-[85%]" />
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700">Feasibility</span>
+                  <span className="text-purple-600">88%</span>
+                </div>
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-purple-600 w-[88%]" />
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Services Section */}
-      <section id="services" className="py-24 px-6 bg-gray-50">
+      {/* Validation Section */}
+      <section id="validation" className="py-24 px-6 bg-white">
         <div className="max-w-7xl mx-auto">
-          <motion.h2 
-            className="text-4xl text-center text-black mb-8"
+          <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
+            className="text-center mb-16"
           >
-            Services
-          </motion.h2>
-          <motion.p
-            className="text-center text-gray-600 text-lg"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            Coming Soon
-          </motion.p>
-        </div>
-      </section>
+            <h2 className="text-4xl md:text-5xl text-black mb-6">
+              Test Before You Build. <span className="text-red-600">Validate with Precision.</span>
+            </h2>
+            <p className="text-xl text-gray-600">Before you risk time or money, validate across four key dimensions</p>
+          </motion.div>
 
-      {/* About Section - 4 Cards */}
-      <section id="about" className="py-24 px-6 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <motion.h2 
-            className="text-4xl text-center text-black mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            About Execution Planner
-          </motion.h2>
-
-          <div className="grid md:grid-cols-2 gap-8">
-            {aboutCards.map((card, index) => (
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {validationCards.map((card, index) => (
               <motion.div
                 key={index}
-                className="bg-gradient-to-br from-gray-900 to-black text-white p-8 rounded-2xl shadow-xl"
                 initial={{ opacity: 0, y: 50 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
-                whileHover={{ scale: 1.02 }}
+                className="bg-white p-8 rounded-2xl border-2 border-gray-200 hover:border-red-600 hover:shadow-xl transition-all"
               >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center">
-                    <span className="text-white text-xl">{index + 1}</span>
-                  </div>
-                  <h3 className="text-2xl">{card.title}</h3>
+                <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-6">
+                  <card.icon className="w-8 h-8 text-red-600" />
                 </div>
-                <p className="text-gray-300 leading-relaxed">{card.content}</p>
+                <h3 className="text-xl text-black mb-3">{card.title}</h3>
+                <p className="text-gray-600">{card.desc}</p>
+                <div className="mt-6 flex items-center gap-2">
+                  <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-red-600"
+                      initial={{ width: 0 }}
+                      whileInView={{ width: `${Math.random() * 30 + 70}%` }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 1, delay: index * 0.2 }}
+                    />
+                  </div>
+                </div>
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Business Plan Builder Section */}
+      <section className="py-24 px-6 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl text-black mb-6">
+              Turn Your Validated Idea Into an <span className="text-red-600">Actionable Plan</span>
+            </h2>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              'Define your problem, solution, and value proposition',
+              'Identify key partners, channels, and revenue streams',
+              'Generate investor-ready visuals instantly'
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className="bg-white p-8 rounded-2xl shadow-lg"
+              >
+                <div className="w-12 h-12 rounded-full bg-red-600 text-white flex items-center justify-center mb-4 text-xl">
+                  {index + 1}
+                </div>
+                <p className="text-lg text-gray-700">{item}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mt-12"
+          >
+            <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white" onClick={() => setShowSignUpModal(true)}>
+              Generate My Lean Canvas
+            </Button>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Execution Section */}
+      <section className="py-24 px-6 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl text-black mb-6">
+              Execution <span className="text-red-600">Without Confusion</span>
+            </h2>
+            <p className="text-xl text-gray-600">Plan tasks, assign actions, and track every milestone</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="bg-gradient-to-br from-gray-100 to-white p-8 rounded-2xl shadow-xl border-2 border-gray-200"
+          >
+            <div className="grid grid-cols-3 gap-4">
+              {['To Do', 'In Progress', 'Completed'].map((status, index) => (
+                <div key={index} className="bg-white p-4 rounded-lg">
+                  <h4 className="text-sm text-gray-700 mb-3">{status}</h4>
+                  <div className="space-y-2">
+                    {[1, 2, 3].map((item) => (
+                      <div key={item} className="bg-gray-50 p-3 rounded border border-gray-200">
+                        <div className="h-2 bg-gray-200 rounded w-3/4 mb-2" />
+                        <div className="h-2 bg-gray-200 rounded w-1/2" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Outcome Insights Section */}
+      <section className="py-24 px-6 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl text-black mb-6">
+              Measure Progress. <span className="text-red-600">Master Growth.</span>
+            </h2>
+            <p className="text-xl text-gray-600">Track positives, negatives, and outcomes with AI-powered insights</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="grid md:grid-cols-3 gap-8"
+          >
+            {[
+              { label: 'Completed', value: '87%', color: 'green' },
+              { label: 'In Progress', value: '42%', color: 'yellow' },
+              { label: 'Pending', value: '13%', color: 'red' }
+            ].map((stat, index) => (
+              <div key={index} className="bg-white p-8 rounded-2xl shadow-lg text-center">
+                <div className={`text-4xl text-${stat.color}-600 mb-2`}>{stat.value}</div>
+                <div className="text-gray-700">{stat.label}</div>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Who It's For Section */}
+      <section id="who-its-for" className="py-24 px-6 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl text-black mb-6">
+              Built for Every Dreamer Who <span className="text-red-600">Dares to Execute</span>
+            </h2>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {audienceCards.map((card, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className="bg-gradient-to-br from-black to-gray-900 text-white p-8 rounded-2xl hover:scale-105 transition-transform"
+              >
+                <card.icon className="w-12 h-12 text-red-500 mb-4" />
+                <h3 className="text-xl mb-3">{card.title}</h3>
+                <p className="text-gray-400">{card.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why ExecutionPlanner Section */}
+      <section id="why-us" className="py-24 px-6 bg-black text-white">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl mb-6">
+              Because Every Step Counts Between <span className="text-red-500">Idea and Success</span>
+            </h2>
+          </motion.div>
+
+          <div className="grid md:grid-cols-4 gap-8 mb-12">
+            {pillars.map((pillar, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className="text-center"
+              >
+                <div className="w-16 h-16 rounded-full bg-red-600 mx-auto mb-4 flex items-center justify-center text-2xl">
+                  {index + 1}
+                </div>
+                <h3 className="text-xl mb-2">{pillar.title}</h3>
+                <p className="text-gray-400">{pillar.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center"
+          >
+            <p className="text-2xl text-red-500 italic">
+              "Think it. Plan it. Execute it. Learn it. With ExecutionPlanner."
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Final CTA Section */}
+      <section className="py-24 px-6 bg-gradient-to-b from-white to-gray-50">
+        <div className="max-w-4xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="text-5xl md:text-6xl text-black mb-6">
+              Your Next Big Move <span className="text-red-600">Starts Here</span>
+            </h2>
+            <p className="text-xl text-gray-600 mb-4">
+              Let AI turn your ideas into a success roadmap.
+            </p>
+            <p className="text-lg text-gray-600 mb-12">
+              No more confusion. No more wasted potential.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button 
+                size="lg" 
+                className="bg-red-600 hover:bg-red-700 text-white text-lg px-8"
+                onClick={() => setShowSignUpModal(true)}
+              >
+                Start for Free
+              </Button>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="text-lg px-8 border-black hover:bg-black hover:text-white"
+              >
+                Watch Demo
+              </Button>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="text-lg px-8 border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
+                onClick={() => setShowSignUpModal(true)}
+              >
+                See AI in Action
+              </Button>
+            </div>
+
+            {/* Success Rocket Animation */}
+            <motion.div
+              className="mt-16 relative h-32"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+            >
+              <div className="flex items-center justify-between max-w-2xl mx-auto">
+                {journeySteps.map((step, index) => (
+                  <motion.div
+                    key={index}
+                    className="flex flex-col items-center"
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.2 }}
+                  >
+                    <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center mb-2">
+                      <step.icon className="w-6 h-6 text-white" />
+                    </div>
+                    <span className="text-xs text-gray-600">{step.label}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="bg-black text-white py-12 px-6">
-        <div className="max-w-7xl mx-auto text-center">
-          <h3 className="text-2xl mb-4">Execution Planner</h3>
-          <p className="text-gray-400 mb-6">The Best Way How to Turn Ideas into Results</p>
-          <div className="flex justify-center gap-6 text-sm text-gray-400">
-            <a href="#" className="hover:text-red-600 transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-red-600 transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-red-600 transition-colors">Contact</a>
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <h3 className="text-xl mb-4">ExecutionPlanner</h3>
+              <p className="text-gray-400 text-sm">From Idea to Impact. Powered by AI.</p>
+            </div>
+            <div>
+              <h4 className="mb-4">Product</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><a href="#" className="hover:text-red-500">Features</a></li>
+                <li><a href="#" className="hover:text-red-500">Pricing</a></li>
+                <li><a href="#" className="hover:text-red-500">How It Works</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="mb-4">Company</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><a href="#" className="hover:text-red-500">About</a></li>
+                <li><a href="#" className="hover:text-red-500">Blog</a></li>
+                <li><a href="#" className="hover:text-red-500">Contact</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="mb-4">Legal</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><a href="#" className="hover:text-red-500">Privacy</a></li>
+                <li><a href="#" className="hover:text-red-500">Terms</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-gray-800 pt-8 text-center text-sm text-gray-400">
+            <p>© 2025 ExecutionPlanner. All rights reserved.</p>
           </div>
         </div>
       </footer>
 
-      {/* Login Modal */}
+      {/* Login Modal - with authentication logic preserved */}
       <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
         <DialogContent className="!w-[500px] !h-auto !max-w-[90vw]">
           <DialogHeader>
@@ -783,15 +907,15 @@ export function LandingPage({ onLogin }: LandingPageProps) {
 
           <div className="space-y-4 mt-4">
             <div>
-              <Label htmlFor="signup-name" className="mb-3 block">Full Name</Label>
+              <Label htmlFor="signup-name" className="mb-2 block">Full Name</Label>
               <Input id="signup-name" type="text" placeholder="Enter your name" />
             </div>
             <div>
-              <Label htmlFor="signup-email" className="mb-3 block">Email</Label>
+              <Label htmlFor="signup-email" className="mb-2 block">Email</Label>
               <Input id="signup-email" type="email" placeholder="Enter your email" />
             </div>
             <div>
-              <Label htmlFor="signup-password" className="mb-3 block">Password</Label>
+              <Label htmlFor="signup-password" className="mb-2 block">Password</Label>
               <Input id="signup-password" type="password" placeholder="Create a password" />
             </div>
             <Button 

@@ -174,6 +174,10 @@ class AuthApiService {
 
   async login(loginData: LoginData): Promise<LoginResponse> {
     try {
+      // Clear any existing tokens before login
+      console.log('[AuthAPI] Clearing old tokens before login...');
+      this.logout();
+      
       const response = await fetch(`${API_BASE_URL}/login/`, {
         method: 'POST',
         headers: {
@@ -191,6 +195,10 @@ class AuthApiService {
       if (data.status === 'Success' && data.data) {
         this.accessToken = data.data.tokens.access;
         this.refreshToken = data.data.tokens.refresh;
+        console.log('[AuthAPI] New tokens set:', {
+          access: this.accessToken?.substring(0, 20) + '...',
+          refresh: this.refreshToken?.substring(0, 20) + '...'
+        });
         this.saveToLocalStorage(data);
       }
 
@@ -227,6 +235,7 @@ class AuthApiService {
 
   getAccessToken(): string | null {
     if (this.accessToken) {
+      console.log('[AuthAPI] Returning cached token:', this.accessToken.substring(0, 20) + '...');
       return this.accessToken;
     }
 
@@ -236,12 +245,14 @@ class AuthApiService {
         const session = JSON.parse(sessionData);
         this.accessToken = session.tokens?.access || null;
         this.refreshToken = session.tokens?.refresh || null;
+        console.log('[AuthAPI] Loaded token from localStorage:', this.accessToken?.substring(0, 20) + '...');
         return this.accessToken;
       } catch {
         return null;
       }
     }
 
+    console.log('[AuthAPI] No token found');
     return null;
   }
 
@@ -265,6 +276,7 @@ class AuthApiService {
   }
 
   logout() {
+    console.log('[AuthAPI] Logout called - clearing tokens');
     this.accessToken = null;
     this.refreshToken = null;
     localStorage.removeItem('executionPlannerSession');

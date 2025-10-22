@@ -12,6 +12,7 @@ import { IdeaExplanationDialog } from './IdeaExplanationDialog';
 import { LoadingAnimation } from './LoadingAnimation';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { Idea } from '../App';
+import { authApi } from '../services/authApi';
 
 interface IdeaPageProps {
   ideas: Idea[];
@@ -45,7 +46,9 @@ export function IdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onIdeaUpdate }: Id
   const loadingRef = useRef<HTMLDivElement>(null);
 
   const API_BASE_URL = 'http://192.168.1.111:8089';
-  const ACCESS_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYwNjk4NjIwLCJpYXQiOjE3NjA2OTUwMjAsImp0aSI6IjM5YWZjMTNiNDAyMTRiNmRhMDI1MTcxNGQxZjhhM2Q0IiwidXNlcl9pZCI6IjEifQ.t5--0kdEiLT3-jba338Fe7N0RO8rek1iZbLw1yhir0U';
+  
+  // IMPORTANT: Always use authApi.getAccessToken() for authentication
+  // NEVER hardcode access tokens - they expire and change on each login
 
   // Auto-scroll to loading animation when it appears
   useEffect(() => {
@@ -61,10 +64,16 @@ export function IdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onIdeaUpdate }: Id
 
   const fetchSavedIdeas = async () => {
     try {
+      const accessToken = authApi.getAccessToken();
+      if (!accessToken) {
+        console.error('[IdeaPage] No access token available');
+        return;
+      }
+
       const response = await fetch(`${API_BASE_URL}/idea/ideas/`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${ACCESS_TOKEN}`,
+          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
       });
@@ -169,10 +178,17 @@ export function IdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onIdeaUpdate }: Id
       }
 
       // Save idea to API
+      const accessToken = authApi.getAccessToken();
+      if (!accessToken) {
+        console.error('[IdeaPage] No access token available for saving idea');
+        setIsSaving(false);
+        return;
+      }
+
       const response = await fetch(`${API_BASE_URL}/idea/ideas/`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${ACCESS_TOKEN}`,
+          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
