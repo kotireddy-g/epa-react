@@ -26,209 +26,188 @@ const VALIDATION_QUESTIONS = {
   idea: [
     {
       id: 'I1',
-      question: 'How thoroughly have you researched the problem your idea addresses?',
+      question: 'How clearly can you describe your idea in one sentence?',
       options: [
-        { label: 'a) Not at all', value: 'a', score: 0 },
-        { label: 'b) A little', value: 'b', score: 1 },
-        { label: 'c) Somewhat thoroughly', value: 'c', score: 3 },
-        { label: 'd) Extremely thoroughly', value: 'd', score: 5 }
+        { label: 'A) Very clearly', value: 'a', score: 5 },
+        { label: 'B) Somewhat clearly', value: 'b', score: 3 },
+        { label: 'C) Not sure / still thinking', value: 'c', score: 1 }
       ]
     },
     {
       id: 'I2',
-      question: 'Have you personally experienced the problem you are solving?',
+      question: 'Have you identified the main problem your idea solves?',
       options: [
-        { label: 'a) No', value: 'a', score: 0 },
-        { label: 'b) Occasionally', value: 'b', score: 1 },
-        { label: 'c) Often', value: 'c', score: 3 },
-        { label: 'd) Yes, it\'s a major pain point', value: 'd', score: 5 }
+        { label: 'A) Yes, clearly', value: 'a', score: 5 },
+        { label: 'B) Partially', value: 'b', score: 3 },
+        { label: 'C) Not yet', value: 'c', score: 1 }
       ]
     },
     {
       id: 'I3',
-      question: 'How confident are you that a real market exists for this idea?',
+      question: 'Have you checked if similar ideas already exist?',
       options: [
-        { label: 'a) Not confident', value: 'a', score: 0 },
-        { label: 'b) Somewhat confident', value: 'b', score: 1 },
-        { label: 'c) Confident', value: 'c', score: 3 },
-        { label: 'd) Very confident (have validation data)', value: 'd', score: 5 }
+        { label: 'A) Yes, and mine is different', value: 'a', score: 5 },
+        { label: 'B) Yes, but not deeply', value: 'b', score: 3 },
+        { label: 'C) No', value: 'c', score: 1 }
       ]
     },
     {
       id: 'I4',
-      question: 'How do you know your idea is unique or differentiated?',
+      question: 'Do you have a clear target audience in mind?',
       options: [
-        { label: 'a) Pure intuition', value: 'a', score: 0 },
-        { label: 'b) Based on some online search', value: 'b', score: 1 },
-        { label: 'c) User/interview feedback', value: 'c', score: 3 },
-        { label: 'd) Strong evidence and competitor research', value: 'd', score: 5 }
+        { label: 'A) Yes', value: 'a', score: 5 },
+        { label: 'B) Somewhat', value: 'b', score: 3 },
+        { label: 'C) No', value: 'c', score: 1 }
       ]
     },
     {
       id: 'I5',
-      question: 'How open are you to changing your idea based on feedback?',
+      question: 'Can you explain how your idea will create value for users?',
       options: [
-        { label: 'a) Not open', value: 'a', score: 0 },
-        { label: 'b) Somewhat open', value: 'b', score: 1 },
-        { label: 'c) Open to reasonable changes', value: 'c', score: 3 },
-        { label: 'd) Will pivot based on data', value: 'd', score: 5 }
+        { label: 'A) Strongly', value: 'a', score: 5 },
+        { label: 'B) Partly', value: 'b', score: 3 },
+        { label: 'C) Unsure', value: 'c', score: 1 }
       ]
     }
   ],
   persona: [
     {
       id: 'P1',
-      question: 'Have you ever tried to start a business or project before?',
+      question: 'How confident are you in executing your idea?',
       options: [
-        { label: 'A. Yes, I have tried something similar', value: 'a', score: 5 },
-        { label: 'B. I helped someone else with a project', value: 'b', score: 3 },
-        { label: 'C. No, but I have ideas', value: 'c', score: 1 },
-        { label: 'D. No experience at all', value: 'd', score: 0 }
+        { label: 'A) Very confident', value: 'a', score: 5 },
+        { label: 'B) Somewhat confident', value: 'b', score: 3 },
+        { label: 'C) Not confident', value: 'c', score: 1 }
       ]
     },
     {
       id: 'P2',
-      question: 'Do you know anything about the field of this idea?',
+      question: 'Do you have prior experience in this domain or industry?',
       options: [
-        { label: 'A. Yes, I have worked or studied something similar', value: 'a', score: 5 },
-        { label: 'B. I know a little about it', value: 'b', score: 3 },
-        { label: 'C. No, but I want to learn', value: 'c', score: 1 },
-        { label: 'D. No, I don\'t know anything', value: 'd', score: 0 }
+        { label: 'A) Yes', value: 'a', score: 5 },
+        { label: 'B) Some experience', value: 'b', score: 3 },
+        { label: 'C) No experience', value: 'c', score: 1 }
       ]
     },
     {
       id: 'P3',
-      question: 'How confident are you about making this idea work?',
+      question: 'Are you ready to handle challenges and setbacks?',
       options: [
-        { label: 'A. Very confident', value: 'a', score: 5 },
-        { label: 'B. Somewhat confident', value: 'b', score: 3 },
-        { label: 'C. Not very confident', value: 'c', score: 1 },
-        { label: 'D. Unsure', value: 'd', score: 0 }
+        { label: 'A) Absolutely', value: 'a', score: 5 },
+        { label: 'B) Maybe', value: 'b', score: 3 },
+        { label: 'C) Not sure', value: 'c', score: 1 }
       ]
     },
     {
       id: 'P4',
-      question: 'How much time can you spend on this idea?',
+      question: "Are you open to learning new skills for your idea's success?",
       options: [
-        { label: 'A. Full-time (most of my day)', value: 'a', score: 5 },
-        { label: 'B. Part-time (a few hours a day)', value: 'b', score: 3 },
-        { label: 'C. Occasionally (a few hours a week)', value: 'c', score: 1 },
-        { label: 'D. Unsure', value: 'd', score: 0 }
+        { label: 'A) Definitely', value: 'a', score: 5 },
+        { label: 'B) Maybe', value: 'b', score: 3 },
+        { label: 'C) Not really', value: 'c', score: 1 }
       ]
     },
     {
       id: 'P5',
-      question: 'How much money can you spend to start this idea?',
+      question: 'Do you have a clear reason or motivation for pursuing this idea?',
       options: [
-        { label: 'A. Very little (less than $500)', value: 'a', score: 1 },
-        { label: 'B. Some (around $500–$2,000)', value: 'b', score: 2 },
-        { label: 'C. Moderate (around $2,000–$10,000)', value: 'c', score: 3 },
-        { label: 'D. More than $10,000', value: 'd', score: 5 },
-        { label: 'E. I don\'t have money to spend yet', value: 'e', score: 0 }
+        { label: 'A) Yes, strongly', value: 'a', score: 5 },
+        { label: 'B) Somewhat', value: 'b', score: 3 },
+        { label: 'C) Not yet', value: 'c', score: 1 }
       ]
     }
   ],
   network: [
     {
       id: 'N1',
-      question: 'Have you discussed your idea with industry experts?',
+      question: "Do you know anyone who can help with your idea's development?",
       options: [
-        { label: 'a) Not at all', value: 'a', score: 0 },
-        { label: 'b) Sent cold emails', value: 'b', score: 1 },
-        { label: 'c) Informal conversations', value: 'c', score: 3 },
-        { label: 'd) Multiple expert feedback sessions', value: 'd', score: 5 }
+        { label: 'A) Yes, multiple', value: 'a', score: 5 },
+        { label: 'B) A few', value: 'b', score: 3 },
+        { label: 'C) None yet', value: 'c', score: 1 }
       ]
     },
     {
       id: 'N2',
-      question: 'How confident are you in accessing mentorship for your startup?',
+      question: 'Are you connected to a professional community or startup network?',
       options: [
-        { label: 'a) No confidence', value: 'a', score: 0 },
-        { label: 'b) Somewhat confident', value: 'b', score: 1 },
-        { label: 'c) Confident', value: 'c', score: 3 },
-        { label: 'd) Already have mentors', value: 'd', score: 5 }
+        { label: 'A) Yes', value: 'a', score: 5 },
+        { label: 'B) Somewhat', value: 'b', score: 3 },
+        { label: 'C) Not yet', value: 'c', score: 1 }
       ]
     },
     {
       id: 'N3',
-      question: 'Do you have any advisors or board members?',
+      question: 'Have you identified potential collaborators or co-founders?',
       options: [
-        { label: 'a) None', value: 'a', score: 0 },
-        { label: 'b) Considering some', value: 'b', score: 1 },
-        { label: 'c) 1-2 advisors', value: 'c', score: 3 },
-        { label: 'd) Advisory board in place', value: 'd', score: 5 }
+        { label: 'A) Yes', value: 'a', score: 5 },
+        { label: 'B) In progress', value: 'b', score: 3 },
+        { label: 'C) Not yet', value: 'c', score: 1 }
       ]
     },
     {
       id: 'N4',
-      question: 'How much peer support do you have for launching your idea?',
+      question: 'Are you open to joining accelerators or incubators?',
       options: [
-        { label: 'a) None', value: 'a', score: 0 },
-        { label: 'b) A little', value: 'b', score: 1 },
-        { label: 'c) Sufficient', value: 'c', score: 3 },
-        { label: 'd) Strong, regular support', value: 'd', score: 5 }
+        { label: 'A) Definitely', value: 'a', score: 5 },
+        { label: 'B) Maybe', value: 'b', score: 3 },
+        { label: 'C) Not now', value: 'c', score: 1 }
       ]
     },
     {
       id: 'N5',
-      question: 'Are you open to collaboration and partnerships within your network?',
+      question: 'How would you rate your network in your business domain?',
       options: [
-        { label: 'a) Not open', value: 'a', score: 0 },
-        { label: 'b) Unsure', value: 'b', score: 1 },
-        { label: 'c) Open to certain partnerships', value: 'c', score: 3 },
-        { label: 'd) Very open, actively seeking', value: 'd', score: 5 }
+        { label: 'A) A solid set of contacts', value: 'a', score: 5 },
+        { label: 'B) A few acquaintances', value: 'b', score: 3 },
+        { label: 'C) No network', value: 'c', score: 1 }
       ]
     }
   ],
   financial: [
     {
       id: 'F1',
-      question: 'Have you prepared a business budget for your idea?',
+      question: 'Do you have an estimated budget for your idea?',
       options: [
-        { label: 'a) Not yet', value: 'a', score: 0 },
-        { label: 'b) Rough estimate', value: 'b', score: 1 },
-        { label: 'c) Draft budget', value: 'c', score: 3 },
-        { label: 'd) Detailed budget and cash flow', value: 'd', score: 5 }
+        { label: 'A) Yes, detailed', value: 'a', score: 5 },
+        { label: 'B) Rough estimate', value: 'b', score: 3 },
+        { label: 'C) Not yet', value: 'c', score: 1 }
       ]
     },
     {
       id: 'F2',
-      question: 'How do you plan to fund your initial operations?',
+      question: 'Have you considered funding options (loans, investors, grants)?',
       options: [
-        { label: 'a) Personal savings', value: 'a', score: 3 },
-        { label: 'b) Friends & family', value: 'b', score: 2 },
-        { label: 'c) Bank loan/credit', value: 'c', score: 1 },
-        { label: 'd) Grants/VC/Angel funding', value: 'd', score: 5 }
+        { label: 'A) Yes', value: 'a', score: 5 },
+        { label: 'B) Partially', value: 'b', score: 3 },
+        { label: 'C) Not yet', value: 'c', score: 1 }
       ]
     },
     {
       id: 'F3',
       question: 'How familiar are you with startup costs in your industry?',
       options: [
-        { label: 'a) Not familiar', value: 'a', score: 0 },
-        { label: 'b) Somewhat familiar', value: 'b', score: 1 },
-        { label: 'c) Well-researched', value: 'c', score: 3 },
-        { label: 'd) Industry expert', value: 'd', score: 5 }
+        { label: 'A) Well-researched', value: 'a', score: 5 },
+        { label: 'B) Somewhat familiar', value: 'b', score: 3 },
+        { label: 'C) Not familiar', value: 'c', score: 1 }
       ]
     },
     {
       id: 'F4',
-      question: 'Do you have experience raising funds?',
+      question: 'Have you identified possible revenue sources or models?',
       options: [
-        { label: 'a) None', value: 'a', score: 0 },
-        { label: 'b) Some attempts, no success', value: 'b', score: 1 },
-        { label: 'c) Successfully raised before', value: 'c', score: 3 },
-        { label: 'd) Multiple successful rounds', value: 'd', score: 5 }
+        { label: 'A) Yes', value: 'a', score: 5 },
+        { label: 'B) Somewhat', value: 'b', score: 3 },
+        { label: 'C) No', value: 'c', score: 1 }
       ]
     },
     {
       id: 'F5',
-      question: 'Do you have contingency plans for financial emergencies?',
+      question: 'Are you prepared for at least 6 months of expenses without profit?',
       options: [
-        { label: 'a) No plans', value: 'a', score: 0 },
-        { label: 'b) Some general ideas', value: 'b', score: 1 },
-        { label: 'c) Draft contingency plan', value: 'c', score: 3 },
-        { label: 'd) Detailed, actionable plans', value: 'd', score: 5 }
+        { label: 'A) Yes', value: 'a', score: 5 },
+        { label: 'B) Maybe', value: 'b', score: 3 },
+        { label: 'C) No', value: 'c', score: 1 }
       ]
     }
   ]
@@ -249,29 +228,35 @@ export function NewValidationPage({
   const [validationResponse, setValidationResponse] = useState<ValidationResponse | null>(null);
   const [showFollowupDialog, setShowFollowupDialog] = useState(false);
 
-  // Calculate confidence score
-  const calculateConfidence = () => {
+  // Calculate per-section confidence using formula: Sum of selected option values / 25 × 100
+  const calculateSectionConfidence = (sectionKey: keyof typeof VALIDATION_QUESTIONS) => {
+    const questions = VALIDATION_QUESTIONS[sectionKey];
     let totalScore = 0;
-    let maxScore = 0;
-
-    Object.entries(VALIDATION_QUESTIONS).forEach(([, questions]) => {
-      questions.forEach((q) => {
-        const answer = answers[q.id];
-        if (answer) {
-          const option = q.options.find(opt => opt.value === answer);
-          if (option) {
-            totalScore += option.score;
-          }
+    questions.forEach((q) => {
+      const answer = answers[q.id];
+      if (answer) {
+        const option = q.options.find(opt => opt.value === answer);
+        if (option) {
+          totalScore += option.score;
         }
-        // Max score is always 5 per question
-        maxScore += 5;
-      });
+      }
     });
-
-    return maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
+    // Formula: Sum / 25 * 100
+    return Math.round((totalScore / 25) * 100);
   };
 
-  const confidence = calculateConfidence();
+  const ideaConfidence = calculateSectionConfidence('idea');
+  const personaConfidence = calculateSectionConfidence('persona');
+  const networkConfidence = calculateSectionConfidence('network');
+  const financialConfidence = calculateSectionConfidence('financial');
+  const overallConfidence = Math.round((ideaConfidence + personaConfidence + networkConfidence + financialConfidence) / 4);
+
+  // Interpretations
+  const getInterpretation = (score: number) => {
+    if (score >= 80) return { label: 'High Confidence', color: 'text-green-600' };
+    if (score >= 50) return { label: 'Medium Confidence', color: 'text-yellow-600' };
+    return { label: 'Low Confidence', color: 'text-red-600' };
+  };
 
   // Check if current section is complete
   const isSectionComplete = (sectionKey: keyof typeof VALIDATION_QUESTIONS) => {
@@ -288,8 +273,8 @@ export function NewValidationPage({
   };
 
   const handleSubmitValidation = async () => {
-    if (confidence < 76) {
-      alert('Confidence score must be at least 76% to proceed.');
+    if (overallConfidence < 76) {
+      alert('Overall confidence score must be at least 76% to proceed.');
       return;
     }
 
@@ -339,9 +324,13 @@ export function NewValidationPage({
       
       // Show follow-up questions dialog
       setShowFollowupDialog(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Validation error:', error);
-      alert('Failed to validate idea. Please try again.');
+      if (error?.message?.toLowerCase().includes('unauthorized')) {
+        alert('Session expired or unauthorized. Please login again to continue.');
+      } else {
+        alert('Failed to validate idea. Please try again.');
+      }
     } finally {
       setIsValidating(false);
     }
@@ -349,7 +338,7 @@ export function NewValidationPage({
 
   const handleFollowupComplete = () => {
     setShowFollowupDialog(false);
-    onComplete(validationResponse, confidence);
+    onComplete(validationResponse, overallConfidence);
   };
 
   const sections = [
@@ -366,18 +355,18 @@ export function NewValidationPage({
         <p className="text-gray-600">Answer all questions to validate your business idea</p>
       </div>
 
-      {/* Confidence Score */}
+      {/* Overall Confidence Score */}
       <Card className="mb-6 border-blue-200 bg-blue-50">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">Confidence Score</span>
-            <span className={`text-2xl font-bold ${confidence >= 76 ? 'text-green-600' : 'text-orange-600'}`}>
-              {confidence}%
+            <span className="text-sm font-medium text-gray-700">Overall Confidence Score</span>
+            <span className={`text-2xl font-bold ${overallConfidence >= 76 ? 'text-green-600' : 'text-orange-600'}`}>
+              {overallConfidence}%
             </span>
           </div>
-          <Progress value={confidence} className="h-3" />
+          <Progress value={overallConfidence} className="h-3" />
           <p className="text-xs text-gray-600 mt-2">
-            {confidence >= 76 ? (
+            {overallConfidence >= 76 ? (
               <span className="flex items-center gap-1 text-green-600">
                 <CheckCircle2 className="w-4 h-4" />
                 Ready to submit! Your confidence score meets the minimum requirement.
@@ -385,10 +374,29 @@ export function NewValidationPage({
             ) : (
               <span className="flex items-center gap-1 text-orange-600">
                 <AlertCircle className="w-4 h-4" />
-                Need {76 - confidence}% more to reach minimum 76% confidence score
+                Need {76 - overallConfidence}% more to reach minimum 76% confidence score
               </span>
             )}
           </p>
+          {/* Per-Section Scores */}
+          <div className="grid grid-cols-4 gap-2 mt-4">
+            <div className="text-center p-2 bg-white rounded">
+              <div className="text-xs text-gray-600">Idea</div>
+              <div className={`text-sm font-bold ${getInterpretation(ideaConfidence).color}`}>{ideaConfidence}%</div>
+            </div>
+            <div className="text-center p-2 bg-white rounded">
+              <div className="text-xs text-gray-600">Persona</div>
+              <div className={`text-sm font-bold ${getInterpretation(personaConfidence).color}`}>{personaConfidence}%</div>
+            </div>
+            <div className="text-center p-2 bg-white rounded">
+              <div className="text-xs text-gray-600">Financial</div>
+              <div className={`text-sm font-bold ${getInterpretation(financialConfidence).color}`}>{financialConfidence}%</div>
+            </div>
+            <div className="text-center p-2 bg-white rounded">
+              <div className="text-xs text-gray-600">Network</div>
+              <div className={`text-sm font-bold ${getInterpretation(networkConfidence).color}`}>{networkConfidence}%</div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -470,7 +478,7 @@ export function NewValidationPage({
         {currentSection === 'financial' ? (
           <Button
             onClick={handleSubmitValidation}
-            disabled={!allSectionsComplete || confidence < 76 || isValidating}
+            disabled={!allSectionsComplete || overallConfidence < 76 || isValidating}
             className="bg-green-600 hover:bg-green-700"
           >
             {isValidating ? 'Validating...' : 'Submit Validation'}

@@ -78,6 +78,11 @@ export function IdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onIdeaUpdate }: Id
         },
       });
 
+      if (response.status === 401) {
+        alert('Session expired or unauthorized. Please login again.');
+        return;
+      }
+
       if (response.ok) {
         const data = await response.json();
         setSavedIdeas(data);
@@ -199,6 +204,12 @@ export function IdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onIdeaUpdate }: Id
         }),
       });
 
+      if (response.status === 401) {
+        alert('Session expired or unauthorized. Please login again.');
+        setIsSaving(false);
+        return;
+      }
+
       if (!response.ok) {
         throw new Error('Failed to save idea');
       }
@@ -262,7 +273,7 @@ export function IdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onIdeaUpdate }: Id
                   <Card key={idea.id} className="relative hover:shadow-md transition-shadow">
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
-                        <CardTitle className="text-base line-clamp-2">{idea.summary}</CardTitle>
+                        <CardTitle className="text-base line-clamp-2" title={idea.summary}>{idea.summary}</CardTitle>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -286,7 +297,7 @@ export function IdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onIdeaUpdate }: Id
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-gray-600 line-clamp-3 mb-3">{idea.description}</p>
+                      <p className="text-sm text-gray-600 line-clamp-3 mb-3" title={idea.description}>{idea.description}</p>
                       <Badge variant={idea.status === 'active' ? 'default' : 'secondary'}>
                         {idea.status}
                       </Badge>
@@ -316,7 +327,7 @@ export function IdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onIdeaUpdate }: Id
                   <Card key={idea.id} className="relative hover:shadow-md transition-shadow">
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
-                        <CardTitle className="text-base line-clamp-2">{idea.title}</CardTitle>
+                        <CardTitle className="text-base line-clamp-2" title={idea.title}>{idea.title}</CardTitle>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -333,7 +344,7 @@ export function IdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onIdeaUpdate }: Id
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-gray-600 line-clamp-3 mb-3">{idea.description}</p>
+                      <p className="text-sm text-gray-600 line-clamp-3 mb-3" title={idea.description}>{idea.description}</p>
                       <Badge variant={idea.status === 'Approved' ? 'default' : 'secondary'}>
                         {idea.status}
                       </Badge>

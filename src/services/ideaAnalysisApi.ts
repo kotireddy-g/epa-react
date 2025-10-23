@@ -256,6 +256,10 @@ class IdeaAnalysisApiService {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          console.error('[IdeaAnalysisAPI] Unauthorized (401)');
+          throw new Error('Unauthorized: Please re-authenticate and try again.');
+        }
         const errorData = await response.json().catch(() => ({}));
         console.error('[IdeaAnalysisAPI] API error:', response.status, errorData);
         throw new Error(errorData.message || `API returned ${response.status}`);
@@ -301,6 +305,10 @@ class IdeaAnalysisApiService {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          console.error('[IdeaAnalysisAPI] Validation Unauthorized (401)');
+          throw new Error('Unauthorized: Please re-authenticate and try again.');
+        }
         const errorData = await response.json().catch(() => ({}));
         console.error('[IdeaAnalysisAPI] Validation API error:', response.status, errorData);
         throw new Error(errorData.message || `API returned ${response.status}`);

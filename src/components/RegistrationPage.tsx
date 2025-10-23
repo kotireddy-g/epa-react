@@ -133,6 +133,7 @@ export function RegistrationPage({ onSuccess, onBackToLogin }: RegistrationPageP
           businessType: formData.businessType,
           companySize: formData.companySize,
           fundingStage: formData.fundingStage,
+          location: '',
         },
       };
 

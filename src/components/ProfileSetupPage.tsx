@@ -18,6 +18,7 @@ export function ProfileSetupPage({ onComplete }: ProfileSetupPageProps) {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
+    address: '',
     companyLink: '',
     currentRole: '',
     currentIndustry: '',
@@ -39,6 +40,7 @@ export function ProfileSetupPage({ onComplete }: ProfileSetupPageProps) {
           setFormData({
             fullName: profileData.fullName || '',
             email: profileData.email || '',
+            address: profileData.address || '',
             companyLink: profileData.companyLink || '',
             currentRole: profileData.currentRole || '',
             currentIndustry: profileData.currentIndustry || '',
@@ -97,27 +99,21 @@ export function ProfileSetupPage({ onComplete }: ProfileSetupPageProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Require all fields except optional companyLink and linkedinProfile
+    const required = ['fullName','email','currentRole','currentIndustry','businessType','yearsOfExperience','companySize','fundingStage','address'];
+    for (const k of required) {
+      if (!(formData as any)[k] || String((formData as any)[k]).trim() === '') {
+        alert('Please complete all required fields before continuing.');
+        return;
+      }
+    }
     onComplete({
       userType: selectedType,
       ...formData,
     });
   };
 
-  const handleSkipWithDummy = () => {
-    onComplete({
-      userType: selectedType,
-      fullName: 'Demo User',
-      email: 'demo@example.com',
-      companyLink: 'https://example.com',
-      currentRole: 'Founder',
-      currentIndustry: 'Technology',
-      businessType: 'SaaS',
-      linkedinProfile: 'https://linkedin.com/in/demo',
-      yearsOfExperience: '5',
-      companySize: '1-10',
-      fundingStage: 'Bootstrapped',
-    });
-  };
+  // removed demo skip per requirements
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -235,6 +231,19 @@ export function ProfileSetupPage({ onComplete }: ProfileSetupPageProps) {
                 />
               </div>
 
+              {/* Address */}
+              <div className="space-y-2">
+                <Label htmlFor="address">
+                  Address / Location
+                </Label>
+                <Input
+                  id="address"
+                  placeholder="City, Country or full address"
+                  value={formData.address}
+                  onChange={(e) => handleInputChange('address', e.target.value)}
+                />
+              </div>
+
               {/* Business Type */}
               <div className="space-y-2">
                 <Label htmlFor="businessType">
@@ -331,13 +340,6 @@ export function ProfileSetupPage({ onComplete }: ProfileSetupPageProps) {
               <Button type="submit" className="flex-1 gap-2">
                 <Check className="w-4 h-4" />
                 Complete Profile & Continue
-              </Button>
-              <Button 
-                type="button" 
-                variant="secondary"
-                onClick={handleSkipWithDummy}
-              >
-                Skip with Demo Data
               </Button>
             </div>
           </form>

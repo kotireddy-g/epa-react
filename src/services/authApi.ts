@@ -19,6 +19,7 @@ export interface RegisterData {
     businessType: string;
     companySize: string;
     fundingStage: string;
+    location: string;
   };
 }
 
@@ -58,6 +59,7 @@ export interface UserProfile {
   businessType: string;
   companySize: string;
   fundingStage: string;
+  location: string;
 }
 
 export interface UserAccount {
@@ -212,20 +214,42 @@ class AuthApiService {
   }
 
   private saveToLocalStorage(loginResponse: LoginResponse) {
+    const profile = loginResponse.data.user.user_account.profile;
     const sessionData = {
       isAuthenticated: true,
       user: loginResponse.data.user,
       tokens: loginResponse.data.tokens,
       userProfile: {
-        fullName: loginResponse.data.user.user_account.profile.fullname,
+        // Basic Info
+        fullName: profile.fullname,
         email: loginResponse.data.user.email,
-        professionalTitle: loginResponse.data.user.user_account.profile.professional_title,
-        company: loginResponse.data.user.user_account.profile.company,
-        industry: loginResponse.data.user.user_account.profile.industry,
-        yearsOfExperience: loginResponse.data.user.user_account.profile.years_of_experience,
-        businessType: loginResponse.data.user.user_account.profile.businessType,
-        companySize: loginResponse.data.user.user_account.profile.companySize,
-        fundingStage: loginResponse.data.user.user_account.profile.fundingStage,
+        
+        // Professional Details
+        currentRole: profile.professional_title,
+        professionalTitle: profile.professional_title,
+        company: profile.company,
+        currentIndustry: profile.industry,
+        industry: profile.industry,
+        yearsOfExperience: profile.years_of_experience,
+        
+        // Business Details
+        businessType: profile.businessType,
+        companySize: profile.companySize,
+        fundingStage: profile.fundingStage,
+        
+        // Location & Links
+        address: profile.location || '',
+        location: profile.location || '',
+        linkedinProfile: loginResponse.data.user.user_account.linkedin_profile || '',
+        companyLink: profile.company || '',
+        
+        // Additional fields
+        dateOfBirth: profile.date_of_birth,
+        gender: profile.gender,
+        
+        // Verification status
+        emailVerified: loginResponse.data.user.user_account.email_verified,
+        linkedinVerified: loginResponse.data.user.user_account.linkedin_verified,
       },
       isProfileComplete: true,
     };
@@ -293,6 +317,18 @@ class AuthApiService {
       }
     }
     return null;
+  }
+
+  async updateProfile(userId: number, profileData: UserProfile): Promise<ApiResponse> {
+    const token = this.getAccessToken();
+    return this.request<ApiResponse>(`/profile/${userId}/`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ profile: profileData }),
+    });
   }
 
   isAuthenticated(): boolean {

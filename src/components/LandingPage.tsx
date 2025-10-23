@@ -28,6 +28,35 @@ export function LandingPage({ onLogin }: LandingPageProps) {
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
+  // Signup state
+  const [signName, setSignName] = useState('');
+  const [signEmail, setSignEmail] = useState('');
+  const [signPassword, setSignPassword] = useState('');
+  const [signConfirmPassword, setSignConfirmPassword] = useState('');
+  const [signCountryCode, setSignCountryCode] = useState('+91');
+  const [signPhone, setSignPhone] = useState('');
+  const [signLinkedIn, setSignLinkedIn] = useState('');
+  const [signLocation, setSignLocation] = useState('');
+  const [signDOB, setSignDOB] = useState('');
+  const [signGender, setSignGender] = useState('NA');
+  const [signProfTitle, setSignProfTitle] = useState('');
+  const [signCompany, setSignCompany] = useState('');
+  const [signIndustry, setSignIndustry] = useState('');
+  const [signYearsExp, setSignYearsExp] = useState('');
+  const [signBusinessType, setSignBusinessType] = useState('');
+  const [signCompanySize, setSignCompanySize] = useState('');
+  const [signFundingStage, setSignFundingStage] = useState('');
+  const [isSigningUp, setIsSigningUp] = useState(false);
+  const [signError, setSignError] = useState('');
+
+  // Email verification state
+  const [showVerifyEmailModal, setShowVerifyEmailModal] = useState(false);
+  const [verifyEmail, setVerifyEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [verifyError, setVerifyError] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isResendingOTP, setIsResendingOTP] = useState(false);
+
   useScroll();
 
   const journeySteps = [
@@ -90,9 +119,101 @@ export function LandingPage({ onLogin }: LandingPageProps) {
       setLoginPassword('');
       onLogin();
     } catch (error: any) {
-      setLoginError(error.message || 'Login failed. Please try again.');
+      // Check if error is due to unverified email/LinkedIn
+      if (error.message && error.message.includes('verify')) {
+        // Show verification modal for email
+        setVerifyEmail(loginEmail);
+        setShowLoginModal(false);
+        setShowVerifyEmailModal(true);
+        setLoginError('');
+      } else {
+        setLoginError(error.message || 'Login failed. Please try again.');
+      }
     } finally {
       setIsLoggingIn(false);
+    }
+  };
+
+  const handleSignup = async () => {
+    setSignError('');
+    // Validate required fields (LinkedIn and Location are now mandatory)
+    if (!signName || !signEmail || !signPassword || !signConfirmPassword || !signPhone || 
+        !signProfTitle || !signIndustry || !signYearsExp || !signBusinessType || 
+        !signCompanySize || !signFundingStage || !signLinkedIn || !signLocation) {
+      setSignError('Please fill all required fields');
+      return;
+    }
+    if (signPassword !== signConfirmPassword) {
+      setSignError('Passwords do not match');
+      return;
+    }
+    try {
+      setIsSigningUp(true);
+      const [first_name, ...rest] = signName.trim().split(' ');
+      const last_name = rest.join(' ') || '-';
+      const registerPayload = {
+        email: signEmail,
+        password: signPassword,
+        confirm_password: signConfirmPassword,
+        first_name,
+        last_name,
+        phone_number: `${signCountryCode}${signPhone}`,
+        linkedin_profile: signLinkedIn,
+        profile: {
+          fullname: signName,
+          date_of_birth: signDOB || '1990-01-01',
+          gender: signGender.toLowerCase,
+          professional_title: signProfTitle,
+          company: signCompany || '',
+          industry: signIndustry,
+          years_of_experience: parseInt(signYearsExp) || 0,
+          businessType: signBusinessType,
+          companySize: signCompanySize,
+          fundingStage: signFundingStage,
+          location: signLocation,
+        },
+      } as any;
+      await authApi.register(registerPayload);
+      // On success, show email verification modal
+      setVerifyEmail(signEmail);
+      setShowSignUpModal(false);
+      setShowVerifyEmailModal(true);
+    } catch (e: any) {
+      setSignError(e.message || 'Signup failed. Please try again.');
+    } finally {
+      setIsSigningUp(false);
+    }
+  };
+
+  const handleVerifyEmail = async () => {
+    setVerifyError('');
+    if (!otpCode || otpCode.length !== 6) {
+      setVerifyError('Please enter a valid 6-digit OTP');
+      return;
+    }
+    try {
+      setIsVerifying(true);
+      await authApi.verifyEmail({ email: verifyEmail, otp_code: otpCode });
+      setShowVerifyEmailModal(false);
+      setShowLoginModal(true);
+      setOtpCode('');
+    } catch (e: any) {
+      setVerifyError(e.message || 'Verification failed. Please try again.');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setVerifyError('');
+    try {
+      setIsResendingOTP(true);
+      await authApi.resendOTP({ email: verifyEmail });
+      alert('OTP has been resent to your email');
+    } catch (e: any) {
+      setVerifyError(e.message || 'Failed to resend OTP');
+    } finally {
+      setIsResendingOTP(false);
     }
   };
 
@@ -905,27 +1026,159 @@ export function LandingPage({ onLogin }: LandingPageProps) {
             <DialogDescription>Create an account to begin turning ideas into results</DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 mt-4">
-            <div>
-              <Label htmlFor="signup-name" className="mb-2 block">Full Name</Label>
-              <Input id="signup-name" type="text" placeholder="Enter your name" />
+          <div className="space-y-3 mt-4 max-h-[70vh] overflow-y-auto pr-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="signup-name" className="mb-1 block text-sm">Full Name *</Label>
+                <Input id="signup-name" type="text" placeholder="John Doe" value={signName} onChange={e=>setSignName(e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="signup-email" className="mb-1 block text-sm">Email *</Label>
+                <Input id="signup-email" type="email" placeholder="john@example.com" value={signEmail} onChange={e=>setSignEmail(e.target.value)} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="signup-password" className="mb-1 block text-sm">Password *</Label>
+                <Input id="signup-password" type="password" placeholder="••••••••" value={signPassword} onChange={e=>setSignPassword(e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="signup-confirm-password" className="mb-1 block text-sm">Confirm Password *</Label>
+                <Input id="signup-confirm-password" type="password" placeholder="••••••••" value={signConfirmPassword} onChange={e=>setSignConfirmPassword(e.target.value)} />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <Label className="mb-1 block text-sm">Country Code *</Label>
+                <Input value={signCountryCode} onChange={e=>setSignCountryCode(e.target.value)} placeholder="+91" />
+              </div>
+              <div className="col-span-2">
+                <Label className="mb-1 block text-sm">Phone *</Label>
+                <Input value={signPhone} onChange={e=>setSignPhone(e.target.value)} placeholder="9876543210" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="mb-1 block text-sm">Professional Title *</Label>
+                <Input placeholder="Founder, CEO, etc." value={signProfTitle} onChange={e=>setSignProfTitle(e.target.value)} />
+              </div>
+              <div>
+                <Label className="mb-1 block text-sm">Industry *</Label>
+                <Input placeholder="Technology, Healthcare, etc." value={signIndustry} onChange={e=>setSignIndustry(e.target.value)} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="mb-1 block text-sm">Years of Experience *</Label>
+                <Input type="number" placeholder="5" value={signYearsExp} onChange={e=>setSignYearsExp(e.target.value)} />
+              </div>
+              <div>
+                <Label className="mb-1 block text-sm">Business Type *</Label>
+                <Input placeholder="SaaS, E-commerce, etc." value={signBusinessType} onChange={e=>setSignBusinessType(e.target.value)} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="mb-1 block text-sm">Company Size *</Label>
+                <select className="w-full border rounded-md p-2 text-sm" value={signCompanySize} onChange={e=>setSignCompanySize(e.target.value)}>
+                  <option value="">Select size</option>
+                  <option value="1-10">1-10</option>
+                  <option value="11-50">11-50</option>
+                  <option value="51-200">51-200</option>
+                  <option value="201-500">201-500</option>
+                  <option value="500+">500+</option>
+                </select>
+              </div>
+              <div>
+                <Label className="mb-1 block text-sm">Funding Stage *</Label>
+                <select className="w-full border rounded-md p-2 text-sm" value={signFundingStage} onChange={e=>setSignFundingStage(e.target.value)}>
+                  <option value="">Select stage</option>
+                  <option value="Bootstrapped">Bootstrapped</option>
+                  <option value="Pre-seed">Pre-seed</option>
+                  <option value="Seed">Seed</option>
+                  <option value="Series A">Series A</option>
+                  <option value="Series B+">Series B+</option>
+                </select>
+              </div>
             </div>
             <div>
-              <Label htmlFor="signup-email" className="mb-2 block">Email</Label>
-              <Input id="signup-email" type="email" placeholder="Enter your email" />
+              <Label className="mb-1 block text-sm">Company (Optional)</Label>
+              <Input placeholder="Your company name" value={signCompany} onChange={e=>setSignCompany(e.target.value)} />
             </div>
             <div>
-              <Label htmlFor="signup-password" className="mb-2 block">Password</Label>
-              <Input id="signup-password" type="password" placeholder="Create a password" />
+              <Label className="mb-1 block text-sm">LinkedIn Profile *</Label>
+              <Input placeholder="https://linkedin.com/in/yourprofile" value={signLinkedIn} onChange={e=>setSignLinkedIn(e.target.value)} />
             </div>
+            <div>
+              <Label className="mb-1 block text-sm">Location *</Label>
+              <Input placeholder="City, State, Country" value={signLocation} onChange={e=>setSignLocation(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="mb-1 block text-sm">Date of Birth (Optional)</Label>
+                <Input type="date" value={signDOB} onChange={e=>setSignDOB(e.target.value)} />
+              </div>
+              <div>
+                <Label className="mb-1 block text-sm">Gender (Optional)</Label>
+                <select className="w-full border rounded-md p-2 text-sm" value={signGender} onChange={e=>setSignGender(e.target.value)}>
+                  <option value="NA">Prefer not to say</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+            {signError && <div className="text-sm text-red-600 bg-red-50 p-2 rounded">{signError}</div>}
             <Button 
               className="w-full bg-red-600 hover:bg-red-700 text-white" 
-              onClick={() => {
-                setShowSignUpModal(false);
-                onLogin();
-              }}
+              onClick={handleSignup}
+              disabled={isSigningUp}
             >
-              Sign Up
+              {isSigningUp ? 'Signing up...' : 'Sign Up'}
+            </Button>
+            <p className="text-xs text-gray-500 text-center">* Required fields</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Email Verification Modal */}
+      <Dialog open={showVerifyEmailModal} onOpenChange={setShowVerifyEmailModal}>
+        <DialogContent className="!w-[450px] !max-w-[90vw]">
+          <DialogHeader>
+            <DialogTitle>Verify Your Email</DialogTitle>
+            <DialogDescription>
+              We've sent a 6-digit OTP to {verifyEmail}. Please enter it below to verify your account.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label htmlFor="otp-code" className="mb-2 block">Enter OTP Code</Label>
+              <Input 
+                id="otp-code" 
+                type="text" 
+                placeholder="Enter 6-digit code" 
+                value={otpCode} 
+                onChange={e=>setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                maxLength={6}
+                className="text-center text-2xl tracking-widest"
+              />
+            </div>
+            {verifyError && <div className="text-sm text-red-600 bg-red-50 p-2 rounded">{verifyError}</div>}
+            <Button 
+              className="w-full bg-green-600 hover:bg-green-700 text-white" 
+              onClick={handleVerifyEmail}
+              disabled={isVerifying || otpCode.length !== 6}
+            >
+              {isVerifying ? 'Verifying...' : 'Verify Email'}
+            </Button>
+            <Button 
+              variant="outline"
+              className="w-full" 
+              onClick={handleResendOTP}
+              disabled={isResendingOTP}
+            >
+              {isResendingOTP ? 'Resending...' : 'Resend OTP'}
             </Button>
           </div>
         </DialogContent>

@@ -74,7 +74,7 @@ export function IdeaExplanationDialog({ isOpen, onClose, onContinue }: IdeaExpla
                     <div className="flex items-start gap-2">
                       <Youtube className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
+                        <h4 className="text-sm text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2" title={video.title}>
                           {video.title}
                         </h4>
                         <p className="text-xs text-gray-500 mt-1">{video.source}</p>

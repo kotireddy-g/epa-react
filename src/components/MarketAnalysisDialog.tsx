@@ -13,9 +13,14 @@ interface MarketAnalysisDialogProps {
   matchType: 'large' | 'medium' | 'small';
   ideaKeywords: { [key: string]: string };
   onApplyRecommendations: (updatedKeywords: { [key: string]: string }) => void;
+  analysisScores?: {
+    strength: { large: number; medium: number; small: number; total: number };
+    quality: { large: number; medium: number; small: number; total: number };
+    customers: { large: number; medium: number; small: number; total: number };
+  };
 }
 
-export function MarketAnalysisDialog({ isOpen, onClose, category, matchType, ideaKeywords, onApplyRecommendations }: MarketAnalysisDialogProps) {
+export function MarketAnalysisDialog({ isOpen, onClose, category, matchType, ideaKeywords, onApplyRecommendations, analysisScores }: MarketAnalysisDialogProps) {
   const [editedKeywords, setEditedKeywords] = useState<{ [key: string]: string }>(ideaKeywords);
   const [editingField, setEditingField] = useState<string | null>(null);
 
@@ -163,6 +168,16 @@ export function MarketAnalysisDialog({ isOpen, onClose, category, matchType, ide
 
         <div className="flex-1 overflow-y-auto pr-4">
           <div className="space-y-4 pb-4">
+            {analysisScores && (
+              <div className="grid grid-cols-3 gap-3">
+                {(['strength','quality','customers'] as const).map((k) => (
+                  <div key={k} className="p-3 rounded-lg border bg-white">
+                    <div className="text-xs text-gray-600 capitalize">{k}</div>
+                    <div className="text-sm text-gray-900">{analysisScores[k].large + analysisScores[k].medium + analysisScores[k].small}/{analysisScores[k].total}</div>
+                  </div>
+                ))}
+              </div>
+            )}
             {/* Match Type Indicator */}
             <Card className={`p-4 ${
               matchType === 'large' ? 'bg-green-50 border-green-300' :

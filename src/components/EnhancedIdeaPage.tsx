@@ -112,43 +112,82 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
   const [keyPoints, setKeyPoints] = useState<KeyPoints | null>(null);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
 
-  // Extract keywords from text
+  // Extract keywords from text (robust, covers synonyms and free-form input)
   const extractKeywordsFromText = (text: string): Partial<IdeaKeywords> => {
     const extracted: Partial<IdeaKeywords> = {};
 
-    // Simple keyword extraction logic
-    FIXED_KEYWORDS.forEach(keyword => {
-      // Find sentences/phrases containing the keyword
-      const regex = new RegExp(`${keyword}[:\\s-]?([^.!?,;]+)`, 'i');
-      const match = text.match(regex);
-      if (match) {
-        extracted[keyword] = match[1].trim().substring(0, 50);
+    if (!text) return extracted;
+
+    const lower = text.toLowerCase();
+
+    // 1) Direct key markers and common synonyms
+    const synonymMap: Record<keyof IdeaKeywords, string[]> = {
+      location: ['location', 'based in', 'in ', 'at ', 'city', 'country', 'region', 'state'],
+      budget: ['budget', 'cost', 'spend', 'investment', 'capex', 'opex', 'price'],
+      category: ['category', 'segment', 'type'],
+      industry: ['industry', 'vertical', 'sector', 'field'],
+      domain: ['domain', 'area', 'niche'],
+      timeline: ['timeline', 'by ', 'within', 'deadline', 'timeframe', 'eta'],
+      target: ['target', 'audience', 'customer', 'users', 'buyer'],
+      scalability: ['scalable', 'scale', 'expansion', 'growth plan'],
+      validation: ['validation', 'survey', 'interview', 'pilot', 'mvp'],
+      metrics: ['metrics', 'kpi', 'okrs', 'measure', 'success metric']
+    };
+
+    const takePhrase = (src: string, startIndex: number): string => {
+      // capture up to next punctuation
+      const tail = src.slice(startIndex).split(/[.;\n\r]/)[0];
+      return tail.trim().slice(0, 80);
+    };
+
+    // Try explicit "key: value" or synonym matches
+    Object.entries(synonymMap).forEach(([key, triggers]) => {
+      if (extracted[key as keyof IdeaKeywords]) return;
+      // 1a. key: value
+      const colonMatch = new RegExp(`(?:^|\n|\s)${key}[:\s-]+([^\n\r\.]+)`, 'i').exec(text);
+      if (colonMatch) {
+        extracted[key as keyof IdeaKeywords] = colonMatch[1].trim().slice(0, 80);
+        return;
+      }
+      // 1b. synonyms
+      for (const trig of triggers) {
+        const idx = lower.indexOf(trig);
+        if (idx !== -1) {
+          const phrase = takePhrase(text, idx + trig.length);
+          if (phrase) {
+            extracted[key as keyof IdeaKeywords] = phrase.replace(/^[:-]\s*/, '').slice(0, 80);
+            break;
+          }
+        }
       }
     });
 
-    // Location detection
-    const locationWords = ['in', 'at', 'located', 'based', 'city', 'country'];
-    locationWords.forEach(word => {
-      const regex = new RegExp(`${word}\\s+([A-Z][a-z]+(?:\\s+[A-Z][a-z]+)?)`, 'g');
-      const match = text.match(regex);
-      if (match && !extracted.location) {
-        extracted.location = match[0].replace(new RegExp(`^${word}\\s+`, 'i'), '');
+    // 2) Heuristics
+    // Location: detect title-cased words after prepositions
+    if (!extracted.location) {
+      const m = /(in|at|based in|from)\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)/.exec(text);
+      if (m) extracted.location = m[2];
+    }
+
+    // Budget: currency, ranges
+    if (!extracted.budget) {
+      const m = /(\$\s?\d[\d,]*(?:\.\d+)?\s?(k|m|million|thousand)?|\d+\s?(usd|dollars))/i.exec(text);
+      if (m) extracted.budget = m[0];
+    }
+
+    // Timeline: durations or deadlines
+    if (!extracted.timeline) {
+      const m = /(within\s+\d+\s+(days|weeks|months|years)|\d+\s+(days|weeks|months|years)|by\s+q[1-4]\s*\d{4}|by\s+\w+\s+\d{4})/i.exec(text);
+      if (m) extracted.timeline = m[0];
+    }
+
+    // Compact cleanup
+    Object.keys(extracted).forEach(k => {
+      const v = (extracted as any)[k];
+      if (typeof v === 'string') {
+        (extracted as any)[k] = v.replace(/^[:\s-]+/, '').trim();
       }
     });
-
-    // Budget detection
-    const budgetRegex = /\$[\d,]+(?:k|m|million|thousand)?|\d+\s*(?:dollars|usd|budget)/gi;
-    const budgetMatch = text.match(budgetRegex);
-    if (budgetMatch && !extracted.budget) {
-      extracted.budget = budgetMatch[0];
-    }
-
-    // Timeline detection
-    const timelineRegex = /\d+\s*(?:months?|years?|weeks?|days?)|within\s+[^.!?,;]+/gi;
-    const timelineMatch = text.match(timelineRegex);
-    if (timelineMatch && !extracted.timeline) {
-      extracted.timeline = timelineMatch[0];
-    }
 
     return extracted;
   };
@@ -327,9 +366,13 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
         setTimeout(() => setShowDetailedDescription(true), 1000);
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('[EnhancedIdeaPage] Error calling API:', error);
-      alert('Failed to analyze idea. Please try again.');
+      if (error?.message?.toLowerCase().includes('unauthorized')) {
+        alert('Session expired or unauthorized. Please login again to continue.');
+      } else {
+        alert('Failed to analyze idea. Please try again.');
+      }
       
       // Fallback to local analysis
       generateKeyPoints(summary);
@@ -517,8 +560,9 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
           onClose={() => setShowMarketAnalysis(false)}
           category={marketAnalysisConfig.category}
           matchType={marketAnalysisConfig.matchType}
-          ideaKeywords={{ ...summaryKeywords, ...detailedKeywords }}
+          ideaKeywords={apiResponse?.final_output?.market_attributes || { ...summaryKeywords, ...detailedKeywords }}
           onApplyRecommendations={handleApplyRecommendations}
+          analysisScores={analysisResult || undefined as any}
         />
 
         {/* Idea Confirmation Dialog */}
@@ -571,6 +615,7 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
                         className={`${summaryKeywords[keyword] 
                           ? 'bg-green-50 border-green-300 text-green-800' 
                           : 'bg-gray-50 border-gray-300 text-gray-600'}`}
+                        title={summaryKeywords[keyword] || ''}
                       >
                         #{keyword}{summaryKeywords[keyword] ? ` (${summaryKeywords[keyword].substring(0, 20)}${summaryKeywords[keyword].length > 20 ? '...' : ''})` : ''}
                       </Badge>
@@ -680,6 +725,7 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
                                 className={`${detailedKeywords[keyword] 
                                   ? 'bg-blue-50 border-blue-300 text-blue-800' 
                                   : 'bg-gray-50 border-gray-300 text-gray-600'}`}
+                                title={detailedKeywords[keyword] || ''}
                               >
                                 #{keyword}{detailedKeywords[keyword] ? ` (${detailedKeywords[keyword].substring(0, 20)}${detailedKeywords[keyword].length > 20 ? '...' : ''})` : ''}
                               </Badge>
@@ -709,15 +755,15 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
             <h2 className="text-xl text-black mb-3">Your Active Ideas</h2>
             <div className="grid md:grid-cols-2 gap-3">
               {activeIdeas.map((idea) => (
-                <Card key={idea.id} className="border border-gray-200 hover:border-red-300 transition-colors">
+                <Card key={idea.id} className="relative hover:shadow-md transition-colors">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-base line-clamp-1">{idea.summary}</CardTitle>
+                      <CardTitle className="text-base line-clamp-1" title={idea.summary}>{idea.summary}</CardTitle>
                       <Badge variant="outline" className="text-xs">{idea.status}</Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    <p className="text-sm text-gray-600 line-clamp-2 mb-2">{idea.description}</p>
+                    <p className="text-sm text-gray-600 line-clamp-2 mb-2" title={idea.description}>{idea.description}</p>
                     <div className="text-xs text-gray-500">
                       {idea.bulletPoints.length} key points
                     </div>

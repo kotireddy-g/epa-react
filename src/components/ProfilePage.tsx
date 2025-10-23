@@ -1,7 +1,12 @@
-import { User, Mail, Briefcase, Building2, Link as LinkIcon, Linkedin, Calendar, Users, TrendingUp, Edit } from 'lucide-react';
+import { useState } from 'react';
+import { User, Mail, Briefcase, Building2, Link as LinkIcon, Linkedin, Calendar, Users, TrendingUp, Edit, CheckCircle, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { authApi } from '../services/authApi';
 
 interface ProfilePageProps {
   userProfile: any;
@@ -9,6 +14,30 @@ interface ProfilePageProps {
 }
 
 export function ProfilePage({ userProfile, onEdit }: ProfilePageProps) {
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [verifyError, setVerifyError] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isResendingOTP, setIsResendingOTP] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(userProfile?.emailVerified || false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editError, setEditError] = useState('');
+  
+  const [editFormData, setEditFormData] = useState({
+    fullname: userProfile?.fullName || '',
+    date_of_birth: userProfile?.dateOfBirth || '1990-01-01',
+    gender: userProfile?.gender || 'male',
+    professional_title: userProfile?.currentRole || '',
+    company: userProfile?.company || '',
+    industry: userProfile?.currentIndustry || '',
+    years_of_experience: userProfile?.yearsOfExperience || 0,
+    businessType: userProfile?.businessType || '',
+    companySize: userProfile?.companySize || '',
+    fundingStage: userProfile?.fundingStage || '',
+    location: userProfile?.address || '',
+  });
+
   if (!userProfile) {
     return (
       <div className="p-8 max-w-6xl mx-auto">
@@ -21,6 +50,59 @@ export function ProfilePage({ userProfile, onEdit }: ProfilePageProps) {
       </div>
     );
   }
+
+  const handleVerifyEmail = async () => {
+    setVerifyError('');
+    if (!otpCode || otpCode.length !== 6) {
+      setVerifyError('Please enter a valid 6-digit OTP');
+      return;
+    }
+    try {
+      setIsVerifying(true);
+      await authApi.verifyEmail({ email: userProfile.email, otp_code: otpCode });
+      setEmailVerified(true);
+      setShowVerifyModal(false);
+      setOtpCode('');
+      alert('Email verified successfully!');
+    } catch (e: any) {
+      setVerifyError(e.message || 'Verification failed. Please try again.');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setVerifyError('');
+    try {
+      setIsResendingOTP(true);
+      await authApi.resendOTP({ email: userProfile.email });
+      alert('OTP has been resent to your email');
+    } catch (e: any) {
+      setVerifyError(e.message || 'Failed to resend OTP');
+    } finally {
+      setIsResendingOTP(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    setEditError('');
+    try {
+      setIsSaving(true);
+      const user = authApi.getStoredUser();
+      if (!user) {
+        setEditError('User not found');
+        return;
+      }
+      await authApi.updateProfile(user.user_account.id, editFormData);
+      setShowEditModal(false);
+      alert('Profile updated successfully! Please refresh the page to see changes.');
+      window.location.reload();
+    } catch (e: any) {
+      setEditError(e.message || 'Failed to update profile');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const getUserTypeLabel = (type: string) => {
     const types: Record<string, string> = {
@@ -85,9 +167,34 @@ export function ProfilePage({ userProfile, onEdit }: ProfilePageProps) {
                 <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">Contact Information</h3>
                 <div className="space-y-3">
                   {userProfile.email && (
-                    <div className="flex items-center gap-3">
-                      <Mail className="w-5 h-5 text-gray-400" />
-                      <span className="text-gray-700">{userProfile.email}</span>
+                    <div className="flex items-center gap-3 justify-between">
+                      <div className="flex items-center gap-3">
+                        <Mail className="w-5 h-5 text-gray-400" />
+                        <span className="text-gray-700">{userProfile.email}</span>
+                      </div>
+                      {emailVerified ? (
+                        <Badge className="bg-green-100 text-green-700 flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3" />
+                          Verified
+                        </Badge>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-yellow-100 text-yellow-700 flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />
+                            Not Verified
+                          </Badge>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              authApi.resendOTP({ email: userProfile.email });
+                              setShowVerifyModal(true);
+                            }}
+                          >
+                            Verify Now
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                   {userProfile.linkedinProfile && (
@@ -204,7 +311,7 @@ export function ProfilePage({ userProfile, onEdit }: ProfilePageProps) {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button variant="outline" className="w-full justify-start">
+              <Button variant="outline" className="w-full justify-start" onClick={() => setShowEditModal(true)}>
                 <User className="w-4 h-4 mr-2" />
                 Update Profile
               </Button>
@@ -216,6 +323,145 @@ export function ProfilePage({ userProfile, onEdit }: ProfilePageProps) {
           </Card>
         </div>
       </div>
+
+      {/* Email Verification Modal */}
+      <Dialog open={showVerifyModal} onOpenChange={setShowVerifyModal}>
+        <DialogContent className="!w-[450px] !max-w-[90vw]">
+          <DialogHeader>
+            <DialogTitle>Verify Your Email</DialogTitle>
+            <DialogDescription>
+              We've sent a 6-digit OTP to {userProfile.email}. Please enter it below to verify your account.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label htmlFor="otp-code" className="mb-2 block">Enter OTP Code</Label>
+              <Input 
+                id="otp-code" 
+                type="text" 
+                placeholder="Enter 6-digit code" 
+                value={otpCode} 
+                onChange={e=>setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                maxLength={6}
+                className="text-center text-2xl tracking-widest"
+              />
+            </div>
+            {verifyError && <div className="text-sm text-red-600 bg-red-50 p-2 rounded">{verifyError}</div>}
+            <Button 
+              className="w-full bg-green-600 hover:bg-green-700 text-white" 
+              onClick={handleVerifyEmail}
+              disabled={isVerifying || otpCode.length !== 6}
+            >
+              {isVerifying ? 'Verifying...' : 'Verify Email'}
+            </Button>
+            <Button 
+              variant="outline"
+              className="w-full" 
+              onClick={handleResendOTP}
+              disabled={isResendingOTP}
+            >
+              {isResendingOTP ? 'Resending...' : 'Resend OTP'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Profile Modal */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="!w-[600px] !max-w-[90vw] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Update Profile</DialogTitle>
+            <DialogDescription>
+              Update your profile information
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Full Name</Label>
+                <Input value={editFormData.fullname} onChange={e=>setEditFormData({...editFormData, fullname: e.target.value})} />
+              </div>
+              <div>
+                <Label>Date of Birth</Label>
+                <Input type="date" value={editFormData.date_of_birth} onChange={e=>setEditFormData({...editFormData, date_of_birth: e.target.value})} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Gender</Label>
+                <select className="w-full border rounded-md p-2" value={editFormData.gender} onChange={e=>setEditFormData({...editFormData, gender: e.target.value})}>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <Label>Professional Title</Label>
+                <Input value={editFormData.professional_title} onChange={e=>setEditFormData({...editFormData, professional_title: e.target.value})} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Company</Label>
+                <Input value={editFormData.company} onChange={e=>setEditFormData({...editFormData, company: e.target.value})} />
+              </div>
+              <div>
+                <Label>Industry</Label>
+                <Input value={editFormData.industry} onChange={e=>setEditFormData({...editFormData, industry: e.target.value})} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Years of Experience</Label>
+                <Input type="number" value={editFormData.years_of_experience} onChange={e=>setEditFormData({...editFormData, years_of_experience: parseInt(e.target.value) || 0})} />
+              </div>
+              <div>
+                <Label>Business Type</Label>
+                <Input value={editFormData.businessType} onChange={e=>setEditFormData({...editFormData, businessType: e.target.value})} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Company Size</Label>
+                <select className="w-full border rounded-md p-2" value={editFormData.companySize} onChange={e=>setEditFormData({...editFormData, companySize: e.target.value})}>
+                  <option value="1-10">1-10</option>
+                  <option value="11-50">11-50</option>
+                  <option value="51-200">51-200</option>
+                  <option value="201-500">201-500</option>
+                  <option value="500+">500+</option>
+                </select>
+              </div>
+              <div>
+                <Label>Funding Stage</Label>
+                <Input value={editFormData.fundingStage} onChange={e=>setEditFormData({...editFormData, fundingStage: e.target.value})} />
+              </div>
+            </div>
+            <div>
+              <Label>Location</Label>
+              <Input value={editFormData.location} onChange={e=>setEditFormData({...editFormData, location: e.target.value})} />
+            </div>
+            {editError && <div className="text-sm text-red-600 bg-red-50 p-2 rounded">{editError}</div>}
+            <div className="flex gap-2">
+              <Button 
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" 
+                onClick={handleSaveProfile}
+                disabled={isSaving}
+              >
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </Button>
+              <Button 
+                variant="outline"
+                className="flex-1" 
+                onClick={() => setShowEditModal(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

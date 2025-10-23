@@ -401,7 +401,7 @@ function AttributeBadge({ icon: Icon, label, value }: { icon: any, label: string
       <Icon className="w-4 h-4 text-purple-600 flex-shrink-0" />
       <div className="min-w-0 flex-1">
         <p className="text-xs text-gray-500">{label}</p>
-        <p className="text-sm font-medium text-gray-900 truncate">{value}</p>
+        <p className="text-sm font-medium text-gray-900 truncate" title={value}>{value}</p>
       </div>
     </div>
   );
