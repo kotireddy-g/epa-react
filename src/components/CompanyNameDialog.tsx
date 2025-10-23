@@ -12,7 +12,7 @@ import { Idea } from '../App';
 interface CompanyNameDialogProps {
   isOpen: boolean;
   idea: Idea;
-  onConfirm: (companyName: string) => void;
+  onConfirm: (companyName: string, industry?: string, domain?: string) => void;
 }
 
 export function CompanyNameDialog({ isOpen, idea, onConfirm }: CompanyNameDialogProps) {
@@ -92,7 +92,7 @@ export function CompanyNameDialog({ isOpen, idea, onConfirm }: CompanyNameDialog
   const handleConfirm = () => {
     const finalName = isCustom ? customName : selectedName;
     if (finalName) {
-      onConfirm(finalName);
+      onConfirm(finalName, aiCategory, aiDomain);
     }
   };
 

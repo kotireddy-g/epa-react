@@ -5,8 +5,8 @@ import { SuggestionsPanel } from './components/SuggestionsPanel';
 import { IntroVideoPage } from './components/IntroVideoPage';
 import { ProfileSetupPage } from './components/ProfileSetupPage';
 import { ProfilePage } from './components/ProfilePage';
-import { IdeaPage } from './components/IdeaPage';
-import { ValidationPage } from './components/ValidationPage';
+import { EnhancedIdeaPage } from './components/EnhancedIdeaPage';
+import { NewValidationPage } from './components/NewValidationPage';
 import { BusinessPlanPage } from './components/BusinessPlanPage';
 import { PlannerPage } from './components/PlannerPage';
 import { ImplementationPage } from './components/ImplementationPage';
@@ -15,6 +15,7 @@ import { NotificationsPage } from './components/NotificationsPage';
 import { CompanyNameDialog } from './components/CompanyNameDialog';
 import { FloatingHomeButton } from './components/FloatingHomeButton';
 import { authApi } from './services/authApi';
+import { AnalyseResponse, ValidationResponse } from './services/ideaAnalysisApi';
 
 export interface Idea {
   id: string;
@@ -27,6 +28,11 @@ export interface Idea {
   businessPlan?: any;
   createdAt: Date;
   isActive: boolean;
+  detailedDescription?: string;
+  ideaId?: string;
+  companyName?: string;
+  industryCategory?: string;
+  domain?: string;
 }
 
 export default function App() {
@@ -40,8 +46,13 @@ export default function App() {
   const [currentIdea, setCurrentIdea] = useState<Idea | null>(null);
   const [selectedPlannerItem, setSelectedPlannerItem] = useState<string | null>(null);
   const [showCompanyNameDialog, setShowCompanyNameDialog] = useState(false);
-  const [, setCompanyName] = useState<string>('');
+  const [companyName, setCompanyName] = useState<string>('');
   const [ideaPageKey, setIdeaPageKey] = useState(0);
+  const [apiResponse, setApiResponse] = useState<AnalyseResponse | null>(null);
+  const [validationResponse, setValidationResponse] = useState<ValidationResponse | null>(null);
+  const [detailedDescription, setDetailedDescription] = useState<string>('');
+  const [industryCategory, setIndustryCategory] = useState<string>('');
+  const [domainValue, setDomainValue] = useState<string>('');
 
   // Load session from localStorage on mount
   useEffect(() => {
@@ -96,18 +107,34 @@ export default function App() {
   };
 
   const handleIdeaAccept = (idea: Idea) => {
-    setCurrentIdea(idea);
+    // Store the idea data including detailed description, ideaId, industry, domain
+    const updatedIdea = {
+      ...idea,
+      detailedDescription: idea.detailedDescription || idea.description,
+      ideaId: idea.ideaId || idea.id,
+      industryCategory: idea.industryCategory || '',
+      domain: idea.domain || ''
+    };
+    
+    setCurrentIdea(updatedIdea);
+    setDetailedDescription(updatedIdea.detailedDescription || '');
+    setIndustryCategory(updatedIdea.industryCategory || '');
+    setDomainValue(updatedIdea.domain || '');
     setShowCompanyNameDialog(true);
   };
 
-  const handleCompanyNameConfirm = (name: string) => {
+  const handleCompanyNameConfirm = (name: string, industry?: string, domain?: string) => {
     setCompanyName(name);
+    if (industry) setIndustryCategory(industry);
+    if (domain) setDomainValue(domain);
     setShowCompanyNameDialog(false);
     
     if (currentIdea) {
       const updatedIdea = {
         ...currentIdea,
         companyName: name,
+        industryCategory: industry || currentIdea.industryCategory || '',
+        domain: domain || currentIdea.domain || '',
       };
       setCurrentIdea(updatedIdea);
       setIdeas(prev => prev.map(i => i.id === updatedIdea.id ? updatedIdea : i));
@@ -222,20 +249,27 @@ export default function App() {
       
       <main className="flex-1 overflow-auto">
         {currentPage === 'idea' && (
-          <IdeaPage 
+          <EnhancedIdeaPage 
             key={ideaPageKey}
             ideas={ideas} 
             onIdeaSubmit={handleIdeaSubmit}
             onIdeaAccept={handleIdeaAccept}
-            onIdeaUpdate={(updatedIdea) => {
+            onIdeaUpdate={(updatedIdea: Idea) => {
               setIdeas(prev => prev.map(i => i.id === updatedIdea.id ? updatedIdea : i));
             }}
+            onApiResponse={setApiResponse}
           />
         )}
         {currentPage === 'validation' && currentIdea && (
-          <ValidationPage 
+          <NewValidationPage 
             idea={currentIdea}
             onComplete={handleValidationComplete}
+            ideaId={currentIdea.ideaId || apiResponse?.idea_id || ''}
+            detailedDescription={detailedDescription || currentIdea.detailedDescription || currentIdea.description}
+            companyName={companyName || currentIdea.companyName || ''}
+            industryCategory={industryCategory || currentIdea.industryCategory || ''}
+            domain={domainValue || currentIdea.domain || ''}
+            onValidationResponse={setValidationResponse}
           />
         )}
         {currentPage === 'business-plan' && currentIdea && (
@@ -273,7 +307,12 @@ export default function App() {
         )}
       </main>
 
-      <SuggestionsPanel currentPage={currentPage} currentIdea={currentIdea} />
+      <SuggestionsPanel 
+        currentPage={currentPage} 
+        currentIdea={currentIdea} 
+        apiResponse={apiResponse}
+        validationResponse={validationResponse}
+      />
 
       {/* Company Name Dialog */}
       {showCompanyNameDialog && currentIdea && (

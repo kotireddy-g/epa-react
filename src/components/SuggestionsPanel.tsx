@@ -1,15 +1,18 @@
-import { ExternalLink, Youtube, FileText, BookOpen } from 'lucide-react';
+import { ExternalLink, Youtube, FileText, BookOpen, Video, Package, Trophy, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import { Idea } from '../App';
+import { AnalyseResponse, ValidationResponse } from '../services/ideaAnalysisApi';
 
 interface SuggestionsPanelProps {
   currentPage: string;
   currentIdea: Idea | null;
   isProfileSetup?: boolean;
+  apiResponse?: AnalyseResponse | null;
+  validationResponse?: ValidationResponse | null;
 }
 
-export function SuggestionsPanel({ currentPage, currentIdea, isProfileSetup = false }: SuggestionsPanelProps) {
+export function SuggestionsPanel({ currentPage, currentIdea, isProfileSetup = false, apiResponse, validationResponse }: SuggestionsPanelProps) {
   const getSuggestions = () => {
     if (isProfileSetup) {
       return {
@@ -116,15 +119,154 @@ export function SuggestionsPanel({ currentPage, currentIdea, isProfileSetup = fa
   const getIcon = (type: string) => {
     switch (type) {
       case 'video':
-        return <Youtube className="w-4 h-4 text-red-500" />;
+        return <Video className="w-5 h-5 text-red-500" />;
       case 'article':
-        return <FileText className="w-4 h-4 text-blue-500" />;
+        return <FileText className="w-5 h-5 text-blue-500" />;
       case 'case-study':
-        return <BookOpen className="w-4 h-4 text-green-500" />;
+      case 'case_study':
+        return <BookOpen className="w-5 h-5 text-green-500" />;
+      case 'vendor':
+        return <Package className="w-5 h-5 text-purple-500" />;
+      case 'success':
+      case 'success_story':
+        return <Trophy className="w-5 h-5 text-yellow-500" />;
+      case 'failure':
+      case 'failure_story':
+        return <AlertCircle className="w-5 h-5 text-orange-500" />;
       default:
         return <ExternalLink className="w-4 h-4" />;
     }
   };
+  
+  // Get validation references if available for 'validation' page
+  const getValidationReferences = () => {
+    if (currentPage !== 'validation' || !validationResponse?.final_output?.references) {
+      return [];
+    }
+    
+    const refs = validationResponse.final_output.references;
+    const allRefs: Array<{ type: string, title: string, source: string, url: string }> = [];
+    
+    // Combine all reference types
+    if (refs.videos) {
+      refs.videos.forEach(ref => allRefs.push({ 
+        type: 'video', 
+        title: ref.title || 'Video Resource', 
+        source: ref.reason || 'Video', 
+        url: ref.url 
+      }));
+    }
+    if (refs.articles) {
+      refs.articles.forEach(ref => allRefs.push({ 
+        type: 'article', 
+        title: ref.title || 'Article', 
+        source: ref.reason || 'Article', 
+        url: ref.url 
+      }));
+    }
+    if (refs.case_studies) {
+      refs.case_studies.forEach(ref => allRefs.push({ 
+        type: 'case_study', 
+        title: ref.title || 'Case Study', 
+        source: ref.reason || 'Case Study', 
+        url: ref.url 
+      }));
+    }
+    if (refs.vendors) {
+      refs.vendors.forEach(ref => allRefs.push({ 
+        type: 'vendor', 
+        title: ref.title || 'Vendor', 
+        source: ref.reason || 'Vendor', 
+        url: ref.url 
+      }));
+    }
+    if (refs.success_stories) {
+      refs.success_stories.forEach(ref => allRefs.push({ 
+        type: 'success_story', 
+        title: ref.title || 'Success Story', 
+        source: ref.reason || 'Success Story', 
+        url: ref.url 
+      }));
+    }
+    if (refs.failure_stories) {
+      refs.failure_stories.forEach(ref => allRefs.push({ 
+        type: 'failure_story', 
+        title: ref.title || 'Failure Story', 
+        source: ref.reason || 'Lesson Learned', 
+        url: ref.url 
+      }));
+    }
+    
+    return allRefs.slice(0, 10); // Limit to 10 items
+  };
+
+  // Get API references if available for 'idea' page
+  const getApiReferences = () => {
+    if (currentPage !== 'idea' || !apiResponse?.final_output?.references) {
+      return [];
+    }
+    
+    const refs = apiResponse.final_output.references;
+    const allRefs: Array<{ type: string, title: string, source: string, url: string }> = [];
+    
+    // Combine all reference types
+    if (refs.videos) {
+      refs.videos.forEach(ref => allRefs.push({ 
+        type: 'video', 
+        title: ref.title || 'Video Resource', 
+        source: ref.reason || 'Video', 
+        url: ref.url 
+      }));
+    }
+    if (refs.articles) {
+      refs.articles.forEach(ref => allRefs.push({ 
+        type: 'article', 
+        title: ref.title || 'Article', 
+        source: ref.reason || 'Article', 
+        url: ref.url 
+      }));
+    }
+    if (refs.case_studies) {
+      refs.case_studies.forEach(ref => allRefs.push({ 
+        type: 'case_study', 
+        title: ref.title || 'Case Study', 
+        source: ref.reason || 'Case Study', 
+        url: ref.url 
+      }));
+    }
+    if (refs.vendors) {
+      refs.vendors.forEach(ref => allRefs.push({ 
+        type: 'vendor', 
+        title: ref.title || 'Vendor', 
+        source: ref.reason || 'Vendor', 
+        url: ref.url 
+      }));
+    }
+    if (refs.success_stories) {
+      refs.success_stories.forEach(ref => allRefs.push({ 
+        type: 'success_story', 
+        title: ref.title || 'Success Story', 
+        source: ref.reason || 'Success Story', 
+        url: ref.url 
+      }));
+    }
+    if (refs.failure_stories) {
+      refs.failure_stories.forEach(ref => allRefs.push({ 
+        type: 'failure_story', 
+        title: ref.title || 'Failure Story', 
+        source: ref.reason || 'Lesson Learned', 
+        url: ref.url 
+      }));
+    }
+    
+    return allRefs.slice(0, 10); // Limit to 10 items
+  };
+  
+  const apiReferences = getApiReferences();
+  const validationReferences = getValidationReferences();
+  
+  // Determine which references to show
+  const displayReferences = validationReferences.length > 0 ? validationReferences : apiReferences;
 
   return (
     <aside className="w-80 bg-white border-l border-gray-200">
@@ -137,25 +279,52 @@ export function SuggestionsPanel({ currentPage, currentIdea, isProfileSetup = fa
         <div className="p-4 space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">{suggestions.title}</CardTitle>
+              <CardTitle className="text-base">
+                {displayReferences.length > 0 
+                  ? (currentPage === 'validation' ? 'Validation Resources' : 'Idea Generation Resources')
+                  : suggestions.title}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {suggestions.items.map((item, index) => (
-                <a
-                  key={index}
-                  href="#"
-                  className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group"
-                >
-                  <div className="mt-0.5">{getIcon(item.type)}</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900 group-hover:text-blue-600 transition-colors">
-                      {item.title}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">{item.source}</p>
-                  </div>
-                  <ExternalLink className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </a>
-              ))}
+              {displayReferences.length > 0 ? (
+                // Show API/Validation references when available
+                displayReferences.map((item, index) => (
+                  <a
+                    key={index}
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group"
+                  >
+                    <div className="mt-0.5">{getIcon(item.type)}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-900 group-hover:text-blue-600 transition-colors">
+                        {item.title}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">{item.source}</p>
+                    </div>
+                    <ExternalLink className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </a>
+                ))
+              ) : (
+                // Show default suggestions
+                suggestions.items.map((item, index) => (
+                  <a
+                    key={index}
+                    href="#"
+                    className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group"
+                  >
+                    <div className="mt-0.5">{getIcon(item.type)}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-900 group-hover:text-blue-600 transition-colors">
+                        {item.title}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">{item.source}</p>
+                    </div>
+                    <ExternalLink className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </a>
+                ))
+              )}
             </CardContent>
           </Card>
 
