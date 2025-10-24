@@ -15,7 +15,7 @@ import { NotificationsPage } from './components/NotificationsPage';
 import { CompanyNameDialog } from './components/CompanyNameDialog';
 import { FloatingHomeButton } from './components/FloatingHomeButton';
 import { authApi } from './services/authApi';
-import { AnalyseResponse, ValidationResponse } from './services/ideaAnalysisApi';
+import { AnalyseResponse, ValidationResponse, PlanResponse } from './services/ideaAnalysisApi';
 
 export interface Idea {
   id: string;
@@ -50,6 +50,7 @@ export default function App() {
   const [ideaPageKey, setIdeaPageKey] = useState(0);
   const [apiResponse, setApiResponse] = useState<AnalyseResponse | null>(null);
   const [validationResponse, setValidationResponse] = useState<ValidationResponse | null>(null);
+  const [planResponse, setPlanResponse] = useState<PlanResponse | null>(null);
   const [detailedDescription, setDetailedDescription] = useState<string>('');
   const [industryCategory, setIndustryCategory] = useState<string>('');
   const [domainValue, setDomainValue] = useState<string>('');
@@ -270,24 +271,28 @@ export default function App() {
             industryCategory={industryCategory || currentIdea.industryCategory || ''}
             domain={domainValue || currentIdea.domain || ''}
             onValidationResponse={setValidationResponse}
+            onPlanResponse={setPlanResponse}
           />
         )}
         {currentPage === 'business-plan' && currentIdea && (
           <BusinessPlanPage 
             idea={currentIdea}
             onComplete={handleBusinessPlanComplete}
+            planData={planResponse}
           />
         )}
         {currentPage === 'planner' && currentIdea && (
           <PlannerPage 
             idea={currentIdea}
             onItemClick={handlePlannerItemClick}
+            planData={planResponse}
           />
         )}
         {currentPage === 'implementation' && currentIdea && (
           <ImplementationPage 
             idea={currentIdea}
             itemType={selectedPlannerItem || 'tasks'}
+            planData={planResponse}
           />
         )}
         {currentPage === 'outcomes' && currentIdea && (
@@ -297,6 +302,7 @@ export default function App() {
               setSelectedPlannerItem('tasks');
               setCurrentPage('implementation');
             }}
+            planData={planResponse}
           />
         )}
         {currentPage === 'notifications' && (

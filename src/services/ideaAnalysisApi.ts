@@ -42,40 +42,18 @@ export interface AnalysePayload {
   };
 }
 
+// Dynamic interfaces - can handle any fields from API
 export interface KeyPointsSummary {
-  core_concept: string;
-  target_market: string;
-  unique_value_proposition: string;
-  revenue_model: string;
-  competitive_advantage: string;
-  growth_potential: string;
-  implementation_timeline: string;
+  [key: string]: string | number | boolean | null | undefined;
 }
 
 export interface MarketAttributes {
-  category: string;
-  domain: string;
-  industry: string;
-  budget: string;
-  location: string;
-  timeline: string;
-  scalability: string;
-  validation: string;
-  metrics: string;
+  [key: string]: string | number | boolean | null | undefined;
 }
 
+// Dynamic interface for budget fit tiers
 export interface BudgetFitTier {
-  tier: string;
-  cap: string;
-  fit: string;
-  approach: string;
-  scope: string;
-  team: string;
-  infra: string;
-  compliance: string;
-  metrics: string;
-  risks: string;
-  notes: string;
+  [key: string]: string | number | boolean | null | undefined;
 }
 
 export interface AIAnalysis {
@@ -109,22 +87,23 @@ export interface Verdict {
   tip: string;
 }
 
+// Fully dynamic FinalOutput - can handle any fields from API
 export interface FinalOutput {
-  policy_guard: string;
-  idea_id: string;
-  key_points_summary: KeyPointsSummary;
-  market_attributes: MarketAttributes;
-  stats_summary: any;
-  population_access_table: any[];
-  budget_fit_tiers_table: BudgetFitTier[];
-  ai_analysis: AIAnalysis;
-  budget_plan: any;
-  technology_development_strategy_table: any[];
-  gtm_customer_strategy_table: any[];
-  competitor_gap_table: any[];
-  market_product_fit_table: any[];
-  references: References;
-  verdict: Verdict;
+  [key: string]: any; // Fully dynamic to handle any API changes
+  idea_id?: string;
+  key_points_summary?: KeyPointsSummary;
+  market_attributes?: MarketAttributes;
+  stats_summary?: any;
+  population_access_table?: any[];
+  budget_fit_tiers_table?: BudgetFitTier[];
+  technology_development_strategy_table?: any[];
+  gtm_customer_strategy_table?: any[];
+  competitor_gap_table?: any[];
+  market_product_fit_table?: any[];
+  references?: References;
+  verdict?: Verdict;
+  legal_compliance_notes?: any;
+  infrastructure_requirements?: any[];
 }
 
 export interface AnalyseResponse {
@@ -185,8 +164,12 @@ export interface LearningRecommendation {
 }
 
 export interface AIFollowupQuestion {
+  [key: string]: any; // Fully dynamic
+  id?: string;
   question: string;
-  options: string[];
+  options?: string[];
+  category?: string;
+  why_important?: string;
 }
 
 export interface PilotReadiness {
@@ -225,6 +208,34 @@ export interface ValidationResponse {
   final_output: ValidationFinalOutput;
   calculated_confidence_score1: number;
   question_scoring_table_calc: any[];
+}
+
+// Plan API Types
+export interface PlanPayload {
+  idea_id: string;
+  ai_followup_questions: Array<{
+    question: string;
+    answer: string;
+  }>;
+  meta: {
+    submitted_on: string;
+    version: string;
+  };
+}
+
+export interface PlanResponse {
+  [key: string]: any; // Fully dynamic
+  idea_id?: string;
+  validation_scores?: any;
+  learning_recommendations?: any[];
+  business_plan?: {
+    high_level_overview?: any[];
+    templates?: any;
+  };
+  planner?: any;
+  implementation?: any;
+  outcomes?: any;
+  meta?: any;
 }
 
 class IdeaAnalysisApiService {
@@ -408,6 +419,54 @@ class IdeaAnalysisApiService {
         version: '1.0'
       }
     };
+  }
+
+  /**
+   * Submit AI follow-up questions and get business plan
+   */
+  async submitPlan(payload: PlanPayload): Promise<PlanResponse> {
+    const accessToken = authApi.getAccessToken();
+    
+    if (!accessToken) {
+      console.error('[IdeaAnalysisAPI] No access token available');
+      throw new Error('Authentication required. Please login.');
+    }
+
+    console.log('[IdeaAnalysisAPI] Submitting plan request:', {
+      idea_id: payload.idea_id,
+      questions_count: payload.ai_followup_questions.length
+    });
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/idea/plan/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.error('[IdeaAnalysisAPI] Unauthorized (401)');
+          throw new Error('Unauthorized: Please re-authenticate and try again.');
+        }
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[IdeaAnalysisAPI] API error:', response.status, errorData);
+        throw new Error(errorData.message || `API returned ${response.status}`);
+      }
+
+      const data: PlanResponse = await response.json();
+      console.log('[IdeaAnalysisAPI] Plan submission successful:', {
+        idea_id: data.idea_id
+      });
+
+      return data;
+    } catch (error) {
+      console.error('[IdeaAnalysisAPI] Error submitting plan:', error);
+      throw error;
+    }
   }
 }
 

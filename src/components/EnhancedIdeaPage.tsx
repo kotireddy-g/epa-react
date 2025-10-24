@@ -325,17 +325,17 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
       
       setAnalysisResult(analysis);
 
-      // Extract key points from API response
+      // Extract key points from API response - DYNAMIC HANDLING
       if (response.final_output?.key_points_summary) {
         const kps = response.final_output.key_points_summary;
         const points: KeyPoints = {
-          coreConcept: kps.core_concept || summary,
-          targetMarket: kps.target_market || 'To be defined',
-          valueProposition: kps.unique_value_proposition || 'Innovative solution',
-          revenueModel: kps.revenue_model || 'Multiple revenue streams',
-          competitiveAdvantages: kps.competitive_advantage || 'Market differentiation',
-          growthPotential: kps.growth_potential || 'High scalability',
-          implementationTimeline: kps.implementation_timeline || '6-12 months'
+          coreConcept: String(kps.core_concept || kps.coreConcept || summary),
+          targetMarket: String(kps.target_market || kps.targetMarket || 'To be defined'),
+          valueProposition: String(kps.unique_value_proposition || kps.valueProposition || 'Innovative solution'),
+          revenueModel: String(kps.revenue_model || kps.revenueModel || 'Multiple revenue streams'),
+          competitiveAdvantages: String(kps.competitive_advantage || kps.competitiveAdvantages || 'Market differentiation'),
+          growthPotential: String(kps.growth_potential || kps.growthPotential || 'High scalability'),
+          implementationTimeline: String(kps.implementation_timeline || kps.implementationTimeline || '6-12 months')
         };
         setKeyPoints(points);
       } else {
@@ -343,21 +343,21 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
         generateKeyPoints(summary);
       }
 
-      // Update keywords from API response - populate all fields
+      // Update keywords from API response - DYNAMIC HANDLING with String conversion
       if (response.final_output?.market_attributes) {
         const attrs = response.final_output.market_attributes;
         console.log('[EnhancedIdeaPage] Updating keywords from API response:', attrs);
         setSummaryKeywords(prev => ({
           ...prev,
-          category: attrs.category || prev.category,
-          domain: attrs.domain || prev.domain,
-          industry: attrs.industry || prev.industry,
-          budget: attrs.budget || prev.budget,
-          location: attrs.location || prev.location,
-          timeline: attrs.timeline || prev.timeline,
-          scalability: attrs.scalability || prev.scalability,
-          validation: attrs.validation || prev.validation,
-          metrics: attrs.metrics || prev.metrics
+          category: String(attrs.category || prev.category),
+          domain: String(attrs.domain || prev.domain),
+          industry: String(attrs.industry || prev.industry),
+          budget: String(attrs.budget || prev.budget),
+          location: String(attrs.location || prev.location),
+          timeline: String(attrs.timeline || prev.timeline),
+          scalability: String(attrs.scalability || prev.scalability),
+          validation: String(attrs.validation || prev.validation),
+          metrics: String(attrs.metrics || prev.metrics)
         }));
       }
 

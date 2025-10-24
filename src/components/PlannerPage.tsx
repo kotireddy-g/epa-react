@@ -7,10 +7,12 @@ import { FeedbackButton } from './FeedbackButton';
 import { NotesButton } from './NotesButton';
 import { Separator } from './ui/separator';
 import { Idea } from '../App';
+import { PlanResponse } from '../services/ideaAnalysisApi';
 
 interface PlannerPageProps {
   idea: Idea;
   onItemClick: (itemType: string) => void;
+  planData?: PlanResponse | null;
 }
 
 interface PlannerTaskItem {
@@ -34,11 +36,48 @@ interface PlannerCard {
   pending: number;
 }
 
-export function PlannerPage({ idea, onItemClick }: PlannerPageProps) {
+export function PlannerPage({ idea, onItemClick, planData }: PlannerPageProps) {
+  console.log('[PlannerPage] Received planData:', planData);
+  
+  // Extract planner data from nested structure
+  const plannerData = planData?.final_output?.planner || planData?.planner;
+  console.log('[PlannerPage] Extracted planner data:', plannerData);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
 
-  // Mock task data for each planner card
+  // Map icon names to components
+  const iconMap: Record<string, any> = {
+    tasks: ListTodo,
+    resources: Users,
+    hardware: Wrench,
+    budget: DollarSign,
+    timeline: Calendar,
+    goals: Target,
+    partnerships: Briefcase,
+    growth: TrendingUp,
+  };
+
+  // Map colors
+  const colorMap = ['blue', 'green', 'orange', 'purple', 'red', 'indigo', 'teal', 'pink'];
+
+  // Get tasks from API or use mock data
   const getTasksForCard = (cardId: string): PlannerTaskItem[] => {
+    // Try to get tasks from API first
+    const apiSection = plannerData?.summary?.find((s: any) => 
+      (s.section_id || s.id) === cardId
+    );
+    
+    if (apiSection?.items && apiSection.items.length > 0) {
+      return apiSection.items.map((item: any) => ({
+        id: item.id || '',
+        name: item.title || item.name || '',
+        description: item.description || '',
+        assignedTo: item.assigned_to || item.assignedTo || 'Unassigned',
+        status: (item.status || 'pending') as 'pending' | 'in-progress' | 'completed',
+        priority: (item.priority || 'medium') as 'low' | 'medium' | 'high',
+      }));
+    }
+    
+    // Fallback to mock data
     const taskData: Record<string, PlannerTaskItem[]> = {
       tasks: [
         { id: 't1', name: 'Market Research', description: 'Conduct comprehensive market analysis', assignedTo: 'Sarah J.', status: 'completed', priority: 'high' },
@@ -170,6 +209,28 @@ export function PlannerPage({ idea, onItemClick }: PlannerPageProps) {
     },
   ];
 
+  // DYNAMIC: Generate planner cards from API data or use defaults
+  const apiPlannerCards: PlannerCard[] = plannerData?.summary?.map((section: any, index: number) => {
+    const sectionId = section.section_id || section.id || `section_${index}`;
+    const iconKey = section.title?.toLowerCase() || 'tasks';
+    
+    return {
+      id: sectionId,
+      title: section.title || 'Section',
+      description: section.description || '',
+      icon: iconMap[iconKey] || ListTodo,
+      color: colorMap[index % colorMap.length],
+      items: section.total_items || 0,
+      implemented: section.progress?.implemented || 0,
+      succeed: section.progress?.succeed || 0,
+      pending: section.progress?.pending || 0,
+    };
+  }) || [];
+
+  // Use API cards if available, otherwise use defaults
+  const displayCards = apiPlannerCards.length > 0 ? apiPlannerCards : plannerCards;
+  console.log('[PlannerPage] Displaying cards:', displayCards);
+
   const getColorClasses = (color: string) => {
     const colorMap: Record<string, { bg: string; text: string; border: string }> = {
       blue: { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' },
@@ -206,7 +267,7 @@ export function PlannerPage({ idea, onItemClick }: PlannerPageProps) {
       </div>
 
       <div className="space-y-6">
-        {plannerCards.map((card) => {
+        {displayCards.map((card) => {
           const Icon = card.icon;
           const colors = getColorClasses(card.color);
           const isExpanded = expandedCard === card.id;

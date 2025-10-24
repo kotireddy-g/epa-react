@@ -51,41 +51,41 @@ export function DetailedAnalysisView({ data }: DetailedAnalysisViewProps) {
         <CardContent className="space-y-4">
           {key_points_summary && (
             <>
-              <KeyPointItem 
-                icon={Lightbulb} 
-                label="Core Concept" 
-                value={key_points_summary.core_concept} 
-              />
-              <KeyPointItem 
-                icon={Target} 
-                label="Target Market" 
-                value={key_points_summary.target_market} 
-              />
-              <KeyPointItem 
-                icon={Rocket} 
-                label="Unique Value Proposition" 
-                value={key_points_summary.unique_value_proposition} 
-              />
-              <KeyPointItem 
-                icon={DollarSign} 
-                label="Revenue Model" 
-                value={key_points_summary.revenue_model} 
-              />
-              <KeyPointItem 
-                icon={Trophy} 
-                label="Competitive Advantages" 
-                value={key_points_summary.competitive_advantage} 
-              />
-              <KeyPointItem 
-                icon={TrendingUp} 
-                label="Growth Potential" 
-                value={key_points_summary.growth_potential} 
-              />
-              <KeyPointItem 
-                icon={Clock} 
-                label="Implementation Timeline" 
-                value={key_points_summary.implementation_timeline} 
-              />
+              {/* DYNAMIC RENDERING - handles any field names from API */}
+              {Object.entries(key_points_summary).map(([key, value]) => {
+                // Map field names to icons and labels
+                const fieldConfig: Record<string, { icon: any; label: string }> = {
+                  core_concept: { icon: Lightbulb, label: 'Core Concept' },
+                  coreConcept: { icon: Lightbulb, label: 'Core Concept' },
+                  target_market: { icon: Target, label: 'Target Market' },
+                  targetMarket: { icon: Target, label: 'Target Market' },
+                  unique_value_proposition: { icon: Rocket, label: 'Unique Value Proposition' },
+                  valueProposition: { icon: Rocket, label: 'Value Proposition' },
+                  revenue_model: { icon: DollarSign, label: 'Revenue Model' },
+                  revenueModel: { icon: DollarSign, label: 'Revenue Model' },
+                  competitive_advantage: { icon: Trophy, label: 'Competitive Advantages' },
+                  competitiveAdvantages: { icon: Trophy, label: 'Competitive Advantages' },
+                  growth_potential: { icon: TrendingUp, label: 'Growth Potential' },
+                  growthPotential: { icon: TrendingUp, label: 'Growth Potential' },
+                  implementation_timeline: { icon: Clock, label: 'Implementation Timeline' },
+                  implementationTimeline: { icon: Clock, label: 'Implementation Timeline' },
+                };
+                
+                const config = fieldConfig[key] || { 
+                  icon: Lightbulb, 
+                  label: key.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim()
+                    .split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+                };
+                
+                return (
+                  <KeyPointItem 
+                    key={key}
+                    icon={config.icon} 
+                    label={config.label} 
+                    value={String(value || 'Not specified')} 
+                  />
+                );
+              })}
             </>
           )}
         </CardContent>
@@ -102,15 +102,33 @@ export function DetailedAnalysisView({ data }: DetailedAnalysisViewProps) {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <AttributeBadge icon={Target} label="Category" value={market_attributes.category} />
-              <AttributeBadge icon={Package} label="Domain" value={market_attributes.domain} />
-              <AttributeBadge icon={Users} label="Industry" value={market_attributes.industry} />
-              <AttributeBadge icon={DollarSign} label="Budget" value={market_attributes.budget} />
-              <AttributeBadge icon={MapPin} label="Location" value={market_attributes.location} />
-              <AttributeBadge icon={Clock} label="Timeline" value={market_attributes.timeline} />
-              <AttributeBadge icon={Rocket} label="Scalability" value={market_attributes.scalability} />
-              <AttributeBadge icon={CheckCircle} label="Validation" value={market_attributes.validation} />
-              <AttributeBadge icon={BarChart3} label="Metrics" value={market_attributes.metrics} />
+              {/* DYNAMIC RENDERING - handles any field names from API */}
+              {Object.entries(market_attributes).map(([key, value]) => {
+                const iconMap: Record<string, any> = {
+                  category: Target,
+                  domain: Package,
+                  industry: Users,
+                  budget: DollarSign,
+                  location: MapPin,
+                  timeline: Clock,
+                  scalability: Rocket,
+                  validation: CheckCircle,
+                  metrics: BarChart3,
+                };
+                
+                const icon = iconMap[key] || Target;
+                const label = key.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim()
+                  .split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                
+                return (
+                  <AttributeBadge 
+                    key={key}
+                    icon={icon} 
+                    label={label} 
+                    value={String(value || 'Not specified')} 
+                  />
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -127,30 +145,45 @@ export function DetailedAnalysisView({ data }: DetailedAnalysisViewProps) {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {stats_summary.TAM && (
-                <StatCard label="Total Addressable Market (TAM)" value={stats_summary.TAM} color="blue" />
-              )}
-              {stats_summary.SAM && (
-                <StatCard label="Serviceable Available Market (SAM)" value={stats_summary.SAM} color="purple" />
-              )}
-              {stats_summary.SOM && (
-                <StatCard label="Serviceable Obtainable Market (SOM)" value={stats_summary.SOM} color="green" />
-              )}
-              {stats_summary.CAGR && (
-                <StatCard label="CAGR" value={stats_summary.CAGR} color="orange" />
-              )}
-              {stats_summary.adoption_curves && (
-                <StatCard label="Adoption Curve" value={stats_summary.adoption_curves} color="pink" />
-              )}
+              {/* DYNAMIC RENDERING - handles any field names from API */}
+              {Object.entries(stats_summary)
+                .filter(([key]) => key !== 'price_bands') // price_bands handled separately below
+                .map(([key, value], index) => {
+                  // Map known fields to friendly labels
+                  const labelMap: Record<string, string> = {
+                    TAM: 'Total Addressable Market (TAM)',
+                    SAM: 'Serviceable Available Market (SAM)',
+                    SOM: 'Serviceable Obtainable Market (SOM)',
+                    CAGR: 'CAGR',
+                    adoption_curves: 'Adoption Curve',
+                    adoptionCurves: 'Adoption Curve',
+                  };
+                  
+                  const label = labelMap[key] || key.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim()
+                    .split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                  
+                  // Cycle through colors
+                  const colors = ['blue', 'purple', 'green', 'orange', 'pink', 'indigo', 'red', 'yellow'];
+                  const color = colors[index % colors.length];
+                  
+                  return (
+                    <StatCard key={key} label={label} value={String(value || '-')} color={color} />
+                  );
+                })}
             </div>
             
             {stats_summary.price_bands && (
               <div className="mt-6">
                 <h4 className="font-semibold mb-3">Price Bands</h4>
                 <div className="grid grid-cols-3 gap-3">
-                  <PriceBand label="Entry" value={stats_summary.price_bands.entry} />
-                  <PriceBand label="Medium" value={stats_summary.price_bands.medium} />
-                  <PriceBand label="Premium" value={stats_summary.price_bands.premium} />
+                  {/* DYNAMIC RENDERING - handles any field names from API */}
+                  {Object.entries(stats_summary.price_bands).map(([key, value]) => {
+                    const label = key.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim()
+                      .split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                    return (
+                      <PriceBand key={key} label={label} value={String(value || '-')} />
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -172,23 +205,30 @@ export function DetailedAnalysisView({ data }: DetailedAnalysisViewProps) {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left font-semibold">City</th>
-                    <th className="px-4 py-3 text-left font-semibold">Daily OPD</th>
-                    <th className="px-4 py-3 text-left font-semibold">Footfall</th>
-                    <th className="px-4 py-3 text-left font-semibold">Peak Ratio</th>
-                    <th className="px-4 py-3 text-left font-semibold">Notes</th>
+                    {/* DYNAMIC HEADERS - automatically generated from first row */}
+                    {Object.keys(population_access_table[0] || {}).map((key) => (
+                      <th key={key} className="px-4 py-3 text-left font-semibold">
+                        {key.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim()
+                          .split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {population_access_table.map((row: any, idx: number) => (
                     <tr key={idx} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium">{row.city}</td>
-                      <td className="px-4 py-3">{row.daily_OPD?.toLocaleString()}</td>
-                      <td className="px-4 py-3">{row.footfall?.toLocaleString()}</td>
-                      <td className="px-4 py-3">
-                        <Badge variant="outline">{(row.peak_ratio * 100).toFixed(0)}%</Badge>
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">{row.notes}</td>
+                      {/* DYNAMIC CELLS - render all values */}
+                      {Object.entries(row).map(([key, value]: [string, any]) => (
+                        <td key={key} className="px-4 py-3">
+                          {typeof value === 'number' && key.includes('ratio') ? (
+                            <Badge variant="outline">{(value * 100).toFixed(0)}%</Badge>
+                          ) : typeof value === 'number' ? (
+                            value.toLocaleString()
+                          ) : (
+                            String(value || '-')
+                          )}
+                        </td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>
@@ -246,17 +286,27 @@ export function DetailedAnalysisView({ data }: DetailedAnalysisViewProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {technology_development_strategy_table.map((month: any, idx: number) => (
+              {/* DYNAMIC RENDERING - handles any fields */}
+              {technology_development_strategy_table.map((item: any, idx: number) => (
                 <div key={idx} className="border-l-4 border-blue-500 pl-4 py-2">
                   <div className="flex items-center space-x-2 mb-2">
-                    <Badge>Month {month.month}</Badge>
-                    <h4 className="font-semibold">{month.deliverables}</h4>
+                    {item.month && <Badge>Month {item.month}</Badge>}
+                    <h4 className="font-semibold">{item.deliverables || item.title || `Item ${idx + 1}`}</h4>
                   </div>
                   <div className="space-y-2 text-sm">
-                    <p><span className="font-medium">Objectives:</span> {month.objectives}</p>
-                    <p><span className="font-medium">Dependencies:</span> {month.dependencies}</p>
-                    <p className="text-red-600"><span className="font-medium">Risks:</span> {month.risks}</p>
-                    <p className="text-green-600"><span className="font-medium">Mitigations:</span> {month.mitigations}</p>
+                    {/* Dynamically render all fields except month and deliverables */}
+                    {Object.entries(item).map(([key, value]) => {
+                      if (key === 'month' || key === 'deliverables' || key === 'title') return null;
+                      const label = key.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim()
+                        .split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                      const colorClass = key.includes('risk') ? 'text-red-600' : 
+                                        key.includes('mitigation') ? 'text-green-600' : '';
+                      return (
+                        <p key={key} className={colorClass}>
+                          <span className="font-medium">{label}:</span> {String(value || '-')}
+                        </p>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
@@ -276,14 +326,21 @@ export function DetailedAnalysisView({ data }: DetailedAnalysisViewProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              {/* DYNAMIC RENDERING - handles any fields */}
               {gtm_customer_strategy_table.map((strategy: any, idx: number) => (
                 <div key={idx} className="bg-purple-50 rounded-lg p-4">
-                  <h4 className="font-semibold mb-3">Ideal Customer Profile</h4>
+                  <h4 className="font-semibold mb-3">Strategy {idx + 1}</h4>
                   <div className="space-y-2 text-sm">
-                    <p><span className="font-medium">Target:</span> {strategy.ICP}</p>
-                    <p><span className="font-medium">Channels:</span> {strategy.channels}</p>
-                    <p><span className="font-medium">Pilot Plan:</span> {strategy.pilot_plan}</p>
-                    <p><span className="font-medium">KPIs:</span> {strategy.KPIs}</p>
+                    {/* Dynamically render all fields */}
+                    {Object.entries(strategy).map(([key, value]) => {
+                      const label = key.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim()
+                        .split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                      return (
+                        <p key={key}>
+                          <span className="font-medium">{label}:</span> {String(value || '-')}
+                        </p>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
@@ -306,17 +363,24 @@ export function DetailedAnalysisView({ data }: DetailedAnalysisViewProps) {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left font-semibold">Competitor</th>
-                    <th className="px-4 py-3 text-left font-semibold">Gap</th>
-                    <th className="px-4 py-3 text-left font-semibold">Your Differentiator</th>
+                    {/* DYNAMIC HEADERS */}
+                    {Object.keys(competitor_gap_table[0] || {}).map((key) => (
+                      <th key={key} className="px-4 py-3 text-left font-semibold">
+                        {key.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim()
+                          .split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {competitor_gap_table.map((row: any, idx: number) => (
                     <tr key={idx} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium">{row.competitor}</td>
-                      <td className="px-4 py-3 text-red-600">{row.gap}</td>
-                      <td className="px-4 py-3 text-green-600">{row.differentiator}</td>
+                      {/* DYNAMIC CELLS */}
+                      {Object.entries(row).map(([key, value]: [string, any], cellIdx) => (
+                        <td key={key} className={`px-4 py-3 ${cellIdx === 0 ? 'font-medium' : ''}`}>
+                          {String(value || '-')}
+                        </td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>
@@ -340,19 +404,24 @@ export function DetailedAnalysisView({ data }: DetailedAnalysisViewProps) {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left font-semibold">Metric</th>
-                    <th className="px-4 py-3 text-left font-semibold">Baseline</th>
-                    <th className="px-4 py-3 text-left font-semibold">Target</th>
-                    <th className="px-4 py-3 text-left font-semibold">Pilot Evidence</th>
+                    {/* DYNAMIC HEADERS */}
+                    {Object.keys(market_product_fit_table[0] || {}).map((key) => (
+                      <th key={key} className="px-4 py-3 text-left font-semibold">
+                        {key.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim()
+                          .split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {market_product_fit_table.map((row: any, idx: number) => (
                     <tr key={idx} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium">{row.metric}</td>
-                      <td className="px-4 py-3">{row.baseline}</td>
-                      <td className="px-4 py-3 text-green-600 font-semibold">{row.target}</td>
-                      <td className="px-4 py-3 text-gray-600">{row.pilot_evidence}</td>
+                      {/* DYNAMIC CELLS */}
+                      {Object.entries(row).map(([key, value]: [string, any], cellIdx) => (
+                        <td key={key} className={`px-4 py-3 ${cellIdx === 0 ? 'font-medium' : ''}`}>
+                          {String(value || '-')}
+                        </td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>

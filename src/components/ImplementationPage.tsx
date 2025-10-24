@@ -11,10 +11,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { JourneyMapView } from './JourneyMapView';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Idea } from '../App';
+import { PlanResponse } from '../services/ideaAnalysisApi';
 
 interface ImplementationPageProps {
   idea: Idea;
   itemType: string;
+  planData?: PlanResponse | null;
 }
 
 interface GanttItem {
@@ -35,7 +37,12 @@ interface PlannerItem {
   color: string;
 }
 
-export function ImplementationPage({ idea, itemType: initialItemType }: ImplementationPageProps) {
+export function ImplementationPage({ idea, itemType: initialItemType, planData }: ImplementationPageProps) {
+  console.log('[ImplementationPage] Received planData:', planData);
+  
+  // Extract implementation data from nested structure
+  const implementationData = planData?.final_output?.implementation || planData?.implementation;
+  console.log('[ImplementationPage] Extracted implementation data:', implementationData);
   const [selectedItemType, setSelectedItemType] = useState(initialItemType);
   const [viewMode, setViewMode] = useState<'timeline' | 'calendar' | 'journey'>('timeline');
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
@@ -53,8 +60,27 @@ export function ImplementationPage({ idea, itemType: initialItemType }: Implemen
     { id: 'partnerships', label: 'Partnerships', icon: Briefcase, color: 'teal' },
   ];
 
-  // Mock data for Gantt chart
+  // Get items from API or use mock data
   const getItemsForType = (type: string): GanttItem[] => {
+    // Try to get from API first
+    const category = implementationData?.categories?.find((cat: any) => 
+      cat.id === type || cat.name?.toLowerCase() === type.toLowerCase()
+    );
+    
+    if (category?.views?.timeline_view && category.views.timeline_view.length > 0) {
+      return category.views.timeline_view.map((item: any) => ({
+        id: item.task_id || item.id || '',
+        name: item.title || item.task_name || '',
+        owner: item.owner || item.assigned_to || 'Unassigned',
+        startDate: item.start_date || item.startDate || new Date().toISOString(),
+        endDate: item.end_date || item.endDate || new Date().toISOString(),
+        completionPercentage: item.progress || item.completionPercentage || 0,
+        status: (item.status || 'not-started') as 'not-started' | 'in-progress' | 'completed' | 'blocked',
+        dependencies: item.dependencies || [],
+      }));
+    }
+    
+    // Fallback to mock data
     const baseDate = new Date();
     const items: Record<string, GanttItem[]> = {
       tasks: [

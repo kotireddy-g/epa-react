@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FileText, Download, Printer, Eye, Edit, ChevronRight, Plus } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -8,10 +8,12 @@ import { Input } from './ui/input';
 import { FeedbackButton } from './FeedbackButton';
 import { NotesButton } from './NotesButton';
 import { Idea } from '../App';
+import { PlanResponse } from '../services/ideaAnalysisApi';
 
 interface BusinessPlanPageProps {
   idea: Idea;
   onComplete: (businessPlan: any) => void;
+  planData?: PlanResponse | null;
 }
 
 interface Template {
@@ -32,10 +34,12 @@ interface TaskRow {
   vendors: string;
 }
 
-export function BusinessPlanPage({ idea, onComplete }: BusinessPlanPageProps) {
+export function BusinessPlanPage({ idea, onComplete, planData }: BusinessPlanPageProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [isTableExpanded, setIsTableExpanded] = useState(false);
-  const [tasks, setTasks] = useState<TaskRow[]>([
+  
+  // Initialize tasks from planData or use defaults
+  const defaultTasks: TaskRow[] = [
     {
       id: '1',
       task: 'Market Research & Analysis',
@@ -68,9 +72,37 @@ export function BusinessPlanPage({ idea, onComplete }: BusinessPlanPageProps) {
       budget: '$15,000/month',
       vendors: 'HubSpot, LinkedIn Ads',
     },
-  ]);
+  ];
 
-  const templates: Template[] = [
+  const [tasks, setTasks] = useState<TaskRow[]>([]);
+
+  // Update tasks when planData changes
+  useEffect(() => {
+    console.log('[BusinessPlan] planData received:', planData);
+    
+    // Handle both direct and nested structures
+    const businessPlan = planData?.final_output?.business_plan || planData?.business_plan;
+    
+    if (businessPlan?.high_level_overview && businessPlan.high_level_overview.length > 0) {
+      const newTasks: TaskRow[] = businessPlan.high_level_overview.map((item: any, index: number) => ({
+        id: String(index + 1),
+        task: item.task_name || item.taskName || item.task || 'Task',
+        resources: item.resources || '-',
+        timeline: item.timeline || '-',
+        budget: item.budget || '-',
+        vendors: item.vendors || '-',
+      }));
+      setTasks(newTasks);
+      console.log('[BusinessPlan] Tasks updated from API:', newTasks);
+    } else {
+      // Use defaults only if no API data
+      console.log('[BusinessPlan] No API data, using defaults');
+      setTasks(defaultTasks);
+    }
+  }, [planData]);
+
+  // DYNAMIC: Load template from API response or use defaults
+  const defaultTemplates: Template[] = [
     {
       id: 'lean-startup',
       name: 'Lean Startup Canvas',
@@ -117,6 +149,21 @@ export function BusinessPlanPage({ idea, onComplete }: BusinessPlanPageProps) {
       sections: ['Franchise Concept', 'Market Analysis', 'Franchise Model', 'Support Systems', 'Training Programs', 'Marketing Support', 'Financial Requirements', 'Legal Structure'],
     },
   ];
+
+  // DYNAMIC: Use API template if available, otherwise use defaults
+  const businessPlan = planData?.final_output?.business_plan || planData?.business_plan;
+  const apiTemplate = businessPlan?.templates;
+  const templates: Template[] = apiTemplate ? [
+    {
+      id: apiTemplate.template_id || apiTemplate.templateId || 'api-template',
+      name: apiTemplate.template_name || apiTemplate.templateName || 'Business Plan Template',
+      description: apiTemplate.description || 'AI-generated business plan template',
+      category: apiTemplate.category || 'Custom',
+      sections: apiTemplate.sections?.map((s: any) => s.title || s.name || String(s)) || [],
+      recommended: true,
+    },
+    ...defaultTemplates
+  ] : defaultTemplates;
 
   const handleTemplateSelect = (template: Template) => {
     setSelectedTemplate(template);

@@ -6,7 +6,7 @@ import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Label } from './ui/label';
 import { Progress } from './ui/progress';
 import { Idea } from '../App';
-import { ideaAnalysisApi, ValidationResponse } from '../services/ideaAnalysisApi';
+import { ideaAnalysisApi, ValidationResponse, PlanResponse } from '../services/ideaAnalysisApi';
 import { AnalyzingDialog } from './AnalyzingDialog';
 import { AIFollowupQuestionsDialog } from './AIFollowupQuestionsDialog';
 
@@ -19,6 +19,7 @@ interface ValidationPageProps {
   industryCategory: string;
   domain: string;
   onValidationResponse?: (response: ValidationResponse | null) => void;
+  onPlanResponse?: (response: PlanResponse) => void;
 }
 
 
@@ -220,7 +221,8 @@ export function NewValidationPage({
   companyName,
   industryCategory,
   domain,
-  onValidationResponse
+  onValidationResponse,
+  onPlanResponse
 }: ValidationPageProps) {
   const [currentSection, setCurrentSection] = useState<'idea' | 'persona' | 'network' | 'financial'>('idea');
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -262,11 +264,6 @@ export function NewValidationPage({
   const isSectionComplete = (sectionKey: keyof typeof VALIDATION_QUESTIONS) => {
     return VALIDATION_QUESTIONS[sectionKey].every(q => answers[q.id]);
   };
-
-  // Check if all sections are complete
-  const allSectionsComplete = Object.keys(VALIDATION_QUESTIONS).every(section =>
-    isSectionComplete(section as keyof typeof VALIDATION_QUESTIONS)
-  );
 
   const handleAnswerChange = (questionId: string, value: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
@@ -336,9 +333,19 @@ export function NewValidationPage({
     }
   };
 
-  const handleFollowupComplete = () => {
+  const handleFollowupComplete = (planResponse: PlanResponse) => {
+    console.log('[ValidationPage] Plan response received:', planResponse);
     setShowFollowupDialog(false);
-    onComplete(validationResponse, overallConfidence);
+    
+    // Store plan response in parent if callback provided
+    if (onPlanResponse) {
+      onPlanResponse(planResponse);
+    }
+    
+    // Delay navigation to allow state to update
+    setTimeout(() => {
+      onComplete(validationResponse, overallConfidence);
+    }, 100);
   };
 
   const sections = [
@@ -478,7 +485,7 @@ export function NewValidationPage({
         {currentSection === 'financial' ? (
           <Button
             onClick={handleSubmitValidation}
-            disabled={!allSectionsComplete || overallConfidence < 76 || isValidating}
+            disabled={overallConfidence < 76 || isValidating}
             className="bg-green-600 hover:bg-green-700"
           >
             {isValidating ? 'Validating...' : 'Submit Validation'}
@@ -505,6 +512,7 @@ export function NewValidationPage({
         <AIFollowupQuestionsDialog
           open={showFollowupDialog}
           questions={validationResponse.final_output.ai_followup_questions}
+          ideaId={ideaId}
           onComplete={handleFollowupComplete}
         />
       )}

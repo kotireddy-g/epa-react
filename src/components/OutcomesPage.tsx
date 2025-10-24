@@ -9,13 +9,20 @@ import { OutcomeDetailDialog, OutcomeTask } from './OutcomeDetailDialog';
 import { IdeaJourneyTimeline } from './IdeaJourneyTimeline';
 import { Separator } from './ui/separator';
 import { Idea } from '../App';
+import { PlanResponse } from '../services/ideaAnalysisApi';
 
 interface OutcomesPageProps {
   idea: Idea;
   onTaskClick?: (taskId: string) => void;
+  planData?: PlanResponse | null;
 }
 
-export function OutcomesPage({ idea }: OutcomesPageProps) {
+export function OutcomesPage({ idea, onTaskClick: _onTaskClick, planData }: OutcomesPageProps) {
+  console.log('[OutcomesPage] Received planData:', planData);
+  
+  // Extract outcomes data from nested structure
+  const outcomesData = planData?.final_output?.outcomes || planData?.outcomes;
+  console.log('[OutcomesPage] Extracted outcomes data:', outcomesData);
   const [selectedOutcome, setSelectedOutcome] = useState<OutcomeTask | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
 
@@ -343,8 +350,8 @@ export function OutcomesPage({ idea }: OutcomesPageProps) {
     },
   ];
 
-  // Mock outcome data with detailed information
-  const outcomes: OutcomeTask[] = [
+  // Get outcomes from API or use mock data
+  const mockOutcomes: OutcomeTask[] = [
     {
       id: '1',
       title: 'Customer Acquisition Target',
@@ -588,6 +595,29 @@ export function OutcomesPage({ idea }: OutcomesPageProps) {
     setSelectedOutcome(outcome);
     setShowDetailDialog(true);
   };
+
+  // DYNAMIC: Generate outcomes from API or use mock data
+  const apiOutcomes: OutcomeTask[] = outcomesData?.detailedResults?.map((result: any) => ({
+    id: result.id || '',
+    title: result.title || '',
+    category: result.category || '',
+    status: result.status?.toLowerCase() || 'met',
+    plannedValue: result.planned || '',
+    actualValue: result.actual || '',
+    variance: parseFloat(result.variance) || 0,
+    positiveImpacts: result.positiveImpacts?.summary || [],
+    negativeImpacts: result.challenges?.summary || [],
+    reasons: {
+      positive: result.dialogDetails?.positiveImpacts?.rootCauses || [],
+      negative: result.dialogDetails?.challengesAndImprovements?.rootCauses || [],
+    },
+    recommendations: result.dialogDetails?.recommendationsForFuture || [],
+    lastUpdated: result.lastUpdated || 'Recently',
+  })) || [];
+
+  // Use API outcomes if available, otherwise use mock data
+  const outcomes = apiOutcomes.length > 0 ? apiOutcomes : mockOutcomes;
+  console.log('[OutcomesPage] Displaying outcomes:', outcomes);
 
   // Calculate overall metrics
   const totalOutcomes = outcomes.length;

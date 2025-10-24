@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -8,24 +8,36 @@ import {
   DialogDescription,
 } from './ui/dialog';
 import { Button } from './ui/button';
-import { RadioGroup, RadioGroupItem } from './ui/radio-group';
+import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
 import { Progress } from './ui/progress';
-import { AIFollowupQuestion } from '../services/ideaAnalysisApi';
+import { Textarea } from './ui/textarea';
+import { AIFollowupQuestion, ideaAnalysisApi, PlanResponse } from '../services/ideaAnalysisApi';
+import { AnalyzingDialog } from './AnalyzingDialog';
 
 interface AIFollowupQuestionsDialogProps {
   open: boolean;
   questions: AIFollowupQuestion[];
-  onComplete: () => void;
+  ideaId: string;
+  onComplete: (planResponse: PlanResponse) => void;
 }
 
 export function AIFollowupQuestionsDialog({
   open,
   questions,
+  ideaId,
   onComplete
 }: AIFollowupQuestionsDialogProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  // Safety check for empty questions array
+  if (!questions || questions.length === 0) {
+    console.warn('[AIFollowupQuestions] No questions provided');
+    return null;
+  }
 
   const currentQuestion = questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
@@ -33,6 +45,29 @@ export function AIFollowupQuestionsDialog({
 
   const handleAnswer = (answer: string) => {
     setAnswers(prev => ({ ...prev, [currentQuestionIndex]: answer }));
+  };
+
+  // Handle checkbox toggle for multiple selection
+  const handleCheckboxToggle = (option: string) => {
+    const currentAnswers = answers[currentQuestionIndex] || '';
+    const selectedOptions = currentAnswers ? currentAnswers.split(', ') : [];
+    
+    if (selectedOptions.includes(option)) {
+      // Remove option
+      const newOptions = selectedOptions.filter(o => o !== option);
+      setAnswers(prev => ({ ...prev, [currentQuestionIndex]: newOptions.join(', ') }));
+    } else {
+      // Add option
+      const newOptions = [...selectedOptions, option];
+      setAnswers(prev => ({ ...prev, [currentQuestionIndex]: newOptions.join(', ') }));
+    }
+  };
+
+  // Check if an option is selected
+  const isOptionSelected = (option: string) => {
+    const currentAnswers = answers[currentQuestionIndex] || '';
+    const selectedOptions = currentAnswers ? currentAnswers.split(', ') : [];
+    return selectedOptions.includes(option);
   };
 
   const handleNext = () => {
@@ -47,15 +82,52 @@ export function AIFollowupQuestionsDialog({
     }
   };
 
-  const handleComplete = () => {
-    console.log('[AIFollowupQuestions] Answers:', answers);
-    onComplete();
+  const handleComplete = async () => {
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      // Build the payload
+      const ai_followup_questions = questions.map((q, index) => ({
+        question: q.question,
+        answer: answers[index] || ''
+      }));
+
+      const payload = {
+        idea_id: ideaId,
+        ai_followup_questions,
+        meta: {
+          submitted_on: new Date().toISOString(),
+          version: 'EPA-AI-v2.0'
+        }
+      };
+
+      console.log('[AIFollowupQuestions] Submitting answers:', payload);
+
+      // Call the API
+      const planResponse = await ideaAnalysisApi.submitPlan(payload);
+      
+      console.log('[AIFollowupQuestions] Plan response received:', planResponse);
+      
+      // Pass the response to parent
+      onComplete(planResponse);
+    } catch (err: any) {
+      console.error('[AIFollowupQuestions] Error submitting plan:', err);
+      setError(err.message || 'Failed to submit answers. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!currentQuestion) return null;
 
   return (
-    <Dialog open={open}>
+    <>
+      {/* Loading Dialog with Tips */}
+      <AnalyzingDialog open={isSubmitting} />
+      
+      {/* Questions Dialog */}
+      <Dialog open={open && !isSubmitting}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-2xl">AI Follow-up Questions</DialogTitle>
@@ -80,33 +152,61 @@ export function AIFollowupQuestionsDialog({
 
           {/* Current Question */}
           <div className="space-y-4">
-            <Label className="text-lg font-semibold text-gray-900">
-              {currentQuestion.question}
-            </Label>
-            <RadioGroup
-              value={answers[currentQuestionIndex] || ''}
-              onValueChange={handleAnswer}
-            >
-              {currentQuestion.options.map((option, index) => (
-                <div key={index} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                  <RadioGroupItem value={option} id={`option-${index}`} />
-                  <Label
-                    htmlFor={`option-${index}`}
-                    className="font-normal cursor-pointer flex-1"
-                  >
-                    {option}
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
+            <div>
+              <Label className="text-lg font-semibold text-gray-900">
+                {currentQuestion.question}
+              </Label>
+              {currentQuestion.category && (
+                <p className="text-sm text-gray-500 mt-1">Category: {currentQuestion.category}</p>
+              )}
+              {currentQuestion.why_important && (
+                <p className="text-sm text-blue-600 mt-1">Why important: {currentQuestion.why_important}</p>
+              )}
+            </div>
+
+            {/* DYNAMIC: Show checkboxes if options exist, otherwise show text input */}
+            {currentQuestion.options && currentQuestion.options.length > 0 ? (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600">Select all that apply:</p>
+                {currentQuestion.options.map((option, index) => (
+                  <div key={index} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                    <Checkbox
+                      id={`option-${index}`}
+                      checked={isOptionSelected(option)}
+                      onCheckedChange={() => handleCheckboxToggle(option)}
+                    />
+                    <Label
+                      htmlFor={`option-${index}`}
+                      className="font-normal cursor-pointer flex-1"
+                    >
+                      {option}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <Textarea
+                placeholder="Type your answer here..."
+                value={answers[currentQuestionIndex] || ''}
+                onChange={(e) => handleAnswer(e.target.value)}
+                className="min-h-[100px]"
+              />
+            )}
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
 
           {/* Navigation */}
           <div className="flex justify-between pt-4 border-t">
             <Button
               variant="outline"
               onClick={handlePrevious}
-              disabled={currentQuestionIndex === 0}
+              disabled={currentQuestionIndex === 0 || isSubmitting}
             >
               Previous
             </Button>
@@ -114,16 +214,25 @@ export function AIFollowupQuestionsDialog({
             {currentQuestionIndex === questions.length - 1 ? (
               <Button
                 onClick={handleComplete}
-                disabled={!allAnswered}
+                disabled={!allAnswered || isSubmitting}
                 className="bg-green-600 hover:bg-green-700"
               >
-                <CheckCircle2 className="w-4 h-4 mr-2" />
-                Complete Validation
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    Complete Validation
+                  </>
+                )}
               </Button>
             ) : (
               <Button
                 onClick={handleNext}
-                disabled={!answers[currentQuestionIndex]}
+                disabled={!answers[currentQuestionIndex] || isSubmitting}
               >
                 Next Question
               </Button>
@@ -151,5 +260,6 @@ export function AIFollowupQuestionsDialog({
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
