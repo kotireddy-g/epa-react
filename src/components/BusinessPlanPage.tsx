@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Download, Printer, Eye, Edit, ChevronRight, Plus } from 'lucide-react';
+import { FileText, Download, Printer, Eye, Edit, ChevronRight } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -153,6 +153,8 @@ export function BusinessPlanPage({ idea, onComplete, planData }: BusinessPlanPag
   // DYNAMIC: Use API template if available, otherwise use defaults
   const businessPlan = planData?.final_output?.business_plan || planData?.business_plan;
   const apiTemplate = businessPlan?.templates;
+  
+  // Show ONLY API template if available, otherwise show defaults
   const templates: Template[] = apiTemplate ? [
     {
       id: apiTemplate.template_id || apiTemplate.templateId || 'api-template',
@@ -161,8 +163,7 @@ export function BusinessPlanPage({ idea, onComplete, planData }: BusinessPlanPag
       category: apiTemplate.category || 'Custom',
       sections: apiTemplate.sections?.map((s: any) => s.title || s.name || String(s)) || [],
       recommended: true,
-    },
-    ...defaultTemplates
+    }
   ] : defaultTemplates;
 
   const handleTemplateSelect = (template: Template) => {
@@ -191,18 +192,6 @@ export function BusinessPlanPage({ idea, onComplete, planData }: BusinessPlanPag
 
   const handleView = (template: Template) => {
     alert(`Viewing ${template.name}... In a real app, this would show a preview of the template.`);
-  };
-
-  const addNewTask = () => {
-    const newTask: TaskRow = {
-      id: (tasks.length + 1).toString(),
-      task: '',
-      resources: '',
-      timeline: '',
-      budget: '',
-      vendors: '',
-    };
-    setTasks([...tasks, newTask]);
   };
 
   const updateTask = (id: string, field: keyof TaskRow, value: string) => {
@@ -242,20 +231,14 @@ export function BusinessPlanPage({ idea, onComplete, planData }: BusinessPlanPag
                   Define the key functional tasks, resources, timelines, budget, and vendors for your business
                 </p>
               </div>
-              <div className="flex gap-2">
-                <Button onClick={addNewTask} size="sm" variant="outline" className="gap-2">
-                  <Plus className="w-4 h-4" />
-                  Add Task
-                </Button>
-                <Button 
-                  onClick={() => setIsTableExpanded(false)} 
-                  size="sm" 
-                  variant="ghost"
-                  className="gap-2"
-                >
-                  Minimize
-                </Button>
-              </div>
+              <Button 
+                onClick={() => setIsTableExpanded(false)} 
+                size="sm" 
+                variant="ghost"
+                className="gap-2"
+              >
+                Minimize
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -376,45 +359,6 @@ export function BusinessPlanPage({ idea, onComplete, planData }: BusinessPlanPag
                       <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handlePrint(template); }}>
                         <Printer className="w-4 h-4 mr-2" />
                         Print
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h2 className="text-gray-900 mb-4">All Templates</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {templates.filter(t => !t.recommended).map((template) => (
-                <Card 
-                  key={template.id} 
-                  className="hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => handleTemplateSelect(template)}
-                >
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-base mb-1">{template.name}</CardTitle>
-                        <Badge variant="secondary" className="mb-2">{template.category}</Badge>
-                      </div>
-                      <FileText className="w-6 h-6 text-gray-600" />
-                    </div>
-                    <p className="text-sm text-gray-600">{template.description}</p>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-700 mb-2">{template.sections.length} sections</p>
-                    <div className="flex items-center gap-2">
-                      <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handleView(template); }}>
-                        <Eye className="w-4 h-4 mr-2" />
-                        View
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handleDownload(template); }}>
-                        <Download className="w-4 h-4" />
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handlePrint(template); }}>
-                        <Printer className="w-4 h-4" />
                       </Button>
                     </div>
                   </CardContent>

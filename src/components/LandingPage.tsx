@@ -8,7 +8,7 @@ import {
   Lightbulb, Brain, TrendingUp, Users, Target, CheckCircle, 
   BarChart, Briefcase, GraduationCap, Rocket,
   Play, ArrowRight, ChevronDown, DollarSign, Network,
-  FileText, Calendar, TrendingDown
+  FileText, Calendar, TrendingDown, Eye, EyeOff
 } from 'lucide-react';
 import { authApi } from '../services/authApi';
 
@@ -56,6 +56,11 @@ export function LandingPage({ onLogin }: LandingPageProps) {
   const [verifyError, setVerifyError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResendingOTP, setIsResendingOTP] = useState(false);
+
+  // Password visibility state
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useScroll();
 
@@ -136,10 +141,10 @@ export function LandingPage({ onLogin }: LandingPageProps) {
 
   const handleSignup = async () => {
     setSignError('');
-    // Validate required fields (LinkedIn and Location are now mandatory)
+    // Validate required fields (LinkedIn is optional, Location is mandatory)
     if (!signName || !signEmail || !signPassword || !signConfirmPassword || !signPhone || 
         !signProfTitle || !signIndustry || !signYearsExp || !signBusinessType || 
-        !signCompanySize || !signFundingStage || !signLinkedIn || !signLocation) {
+        !signCompanySize || !signFundingStage || !signLocation) {
       setSignError('Please fill all required fields');
       return;
     }
@@ -993,19 +998,30 @@ export function LandingPage({ onLogin }: LandingPageProps) {
             </div>
             <div>
               <Label htmlFor="login-password" className="mb-2 block">Password</Label>
-              <Input 
-                id="login-password" 
-                type="password" 
-                placeholder="Enter your password"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                disabled={isLoggingIn}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !isLoggingIn) {
-                    handleLogin();
-                  }
-                }}
-              />
+              <div className="relative">
+                <Input 
+                  id="login-password" 
+                  type={showLoginPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  disabled={isLoggingIn}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !isLoggingIn) {
+                      handleLogin();
+                    }
+                  }}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  tabIndex={-1}
+                >
+                  {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
             <Button 
               className="w-full bg-red-600 hover:bg-red-700 text-white" 
@@ -1040,11 +1056,45 @@ export function LandingPage({ onLogin }: LandingPageProps) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="signup-password" className="mb-1 block text-sm">Password *</Label>
-                <Input id="signup-password" type="password" placeholder="••••••••" value={signPassword} onChange={e=>setSignPassword(e.target.value)} />
+                <div className="relative">
+                  <Input 
+                    id="signup-password" 
+                    type={showSignupPassword ? "text" : "password"}
+                    placeholder="••••••••" 
+                    value={signPassword} 
+                    onChange={e=>setSignPassword(e.target.value)}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSignupPassword(!showSignupPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    tabIndex={-1}
+                  >
+                    {showSignupPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
               <div>
                 <Label htmlFor="signup-confirm-password" className="mb-1 block text-sm">Confirm Password *</Label>
-                <Input id="signup-confirm-password" type="password" placeholder="••••••••" value={signConfirmPassword} onChange={e=>setSignConfirmPassword(e.target.value)} />
+                <div className="relative">
+                  <Input 
+                    id="signup-confirm-password" 
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="••••••••" 
+                    value={signConfirmPassword} 
+                    onChange={e=>setSignConfirmPassword(e.target.value)}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    tabIndex={-1}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2">
@@ -1106,7 +1156,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
               <Input placeholder="Your company name" value={signCompany} onChange={e=>setSignCompany(e.target.value)} />
             </div>
             <div>
-              <Label className="mb-1 block text-sm">LinkedIn Profile *</Label>
+              <Label className="mb-1 block text-sm">LinkedIn Profile (Optional)</Label>
               <Input placeholder="https://linkedin.com/in/yourprofile" value={signLinkedIn} onChange={e=>setSignLinkedIn(e.target.value)} />
             </div>
             <div>

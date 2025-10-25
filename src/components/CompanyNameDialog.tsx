@@ -8,14 +8,16 @@ import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
 import { Sparkles, Edit, Building2, Edit2, Check, X } from 'lucide-react';
 import { Idea } from '../App';
+import { AnalyseResponse } from '../services/ideaAnalysisApi';
 
 interface CompanyNameDialogProps {
   isOpen: boolean;
   idea: Idea;
   onConfirm: (companyName: string, industry?: string, domain?: string) => void;
+  apiResponse?: AnalyseResponse | null;
 }
 
-export function CompanyNameDialog({ isOpen, idea, onConfirm }: CompanyNameDialogProps) {
+export function CompanyNameDialog({ isOpen, idea, onConfirm, apiResponse }: CompanyNameDialogProps) {
   const [selectedName, setSelectedName] = useState<string>('');
   const [customName, setCustomName] = useState('');
   const [isCustom, setIsCustom] = useState(false);
@@ -82,12 +84,24 @@ export function CompanyNameDialog({ isOpen, idea, onConfirm }: CompanyNameDialog
     setCustomDomain('');
   };
 
-  // Analyze idea when dialog opens
+  // Analyze idea when dialog opens - use API data if available
   useEffect(() => {
-    if (idea?.description) {
+    // Priority 1: Use API response data
+    if (apiResponse?.final_output?.market_attributes) {
+      const attrs = apiResponse.final_output.market_attributes;
+      if (attrs.category) {
+        setAiCategory(String(attrs.category));
+      }
+      if (attrs.domain) {
+        setAiDomain(String(attrs.domain));
+      }
+      console.log('[CompanyNameDialog] Using API data:', { category: attrs.category, domain: attrs.domain });
+    } 
+    // Priority 2: Fallback to analyzing description
+    else if (idea?.description) {
       analyzeIdea(idea.description);
     }
-  }, [idea]);
+  }, [idea, apiResponse]);
 
   const handleConfirm = () => {
     const finalName = isCustom ? customName : selectedName;

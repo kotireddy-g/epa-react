@@ -563,7 +563,11 @@ export function ImplementationPage({ idea, itemType: initialItemType, planData }
 
         <TabsContent value="journey" className="mt-6">
           {/* Journey Map View */}
-          <JourneyMapView />
+          <JourneyMapView 
+            journeyData={implementationData?.categories?.find((cat: any) => 
+              cat.id === selectedItemType || cat.name?.toLowerCase() === selectedItemType.toLowerCase()
+            )?.views?.journey_view}
+          />
         </TabsContent>
       </Tabs>
 

@@ -106,6 +106,7 @@ export interface ApiResponse<T = any> {
   status?: string;
   message?: string;
   data?: T;
+  profile?: UserProfile;
 }
 
 class AuthApiService {
@@ -319,9 +320,9 @@ class AuthApiService {
     return null;
   }
 
-  async updateProfile(userId: number, profileData: UserProfile): Promise<ApiResponse> {
+  async updateProfile(userId: number, profileData: UserProfile): Promise<{ message: string; profile: UserProfile }> {
     const token = this.getAccessToken();
-    return this.request<ApiResponse>(`/profile/${userId}/`, {
+    return this.request<{ message: string; profile: UserProfile }>(`/profile/${userId}/`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -331,8 +332,104 @@ class AuthApiService {
     });
   }
 
+  async getProfile(userId: number): Promise<User> {
+    const token = this.getAccessToken();
+    const response = await this.request<{ status: string; message: string; data: { user: User } }>(`/profile/${userId}/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return response.data.user;
+  }
+
   isAuthenticated(): boolean {
     return this.getAccessToken() !== null;
+  }
+
+  async refreshAccessToken(): Promise<string | null> {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) {
+      console.log('[AuthAPI] No refresh token available');
+      return null;
+    }
+
+    try {
+      console.log('[AuthAPI] Refreshing access token...');
+      const response = await fetch(`${API_BASE_URL}/api/token/refresh/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refresh: refreshToken }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('[AuthAPI] Token refresh failed:', data);
+        // Refresh token is invalid, logout user
+        this.logout();
+        return null;
+      }
+
+      // Update access token
+      this.accessToken = data.access;
+      console.log('[AuthAPI] Access token refreshed successfully');
+
+      // Update token in localStorage
+      const sessionData = localStorage.getItem('executionPlannerSession');
+      if (sessionData) {
+        try {
+          const session = JSON.parse(sessionData);
+          session.tokens.access = data.access;
+          localStorage.setItem('executionPlannerSession', JSON.stringify(session));
+        } catch (error) {
+          console.error('[AuthAPI] Failed to update localStorage:', error);
+        }
+      }
+
+      return data.access;
+    } catch (error) {
+      console.error('[AuthAPI] Token refresh error:', error);
+      this.logout();
+      return null;
+    }
+  }
+
+  async fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+    const accessToken = this.getAccessToken();
+    
+    // Add authorization header
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+      ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
+    };
+
+    let response = await fetch(url, { ...options, headers });
+
+    // If 401, try to refresh token and retry
+    if (response.status === 401) {
+      console.log('[AuthAPI] 401 Unauthorized, attempting token refresh...');
+      const newAccessToken = await this.refreshAccessToken();
+      
+      if (newAccessToken) {
+        // Retry with new token
+        const newHeaders = {
+          ...headers,
+          'Authorization': `Bearer ${newAccessToken}`,
+        };
+        response = await fetch(url, { ...options, headers: newHeaders });
+      } else {
+        // Refresh failed, redirect to login
+        console.log('[AuthAPI] Token refresh failed, redirecting to login...');
+        window.location.href = '/';
+      }
+    }
+
+    return response;
   }
 }
 

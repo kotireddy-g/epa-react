@@ -2,7 +2,7 @@ import { ExternalLink, Youtube, FileText, BookOpen, Video, Package, Trophy, Aler
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import { Idea } from '../App';
-import { AnalyseResponse, ValidationResponse } from '../services/ideaAnalysisApi';
+import { AnalyseResponse, ValidationResponse, PlanResponse } from '../services/ideaAnalysisApi';
 
 interface SuggestionsPanelProps {
   currentPage: string;
@@ -10,9 +10,10 @@ interface SuggestionsPanelProps {
   isProfileSetup?: boolean;
   apiResponse?: AnalyseResponse | null;
   validationResponse?: ValidationResponse | null;
+  planResponse?: PlanResponse | null;
 }
 
-export function SuggestionsPanel({ currentPage, currentIdea, isProfileSetup = false, apiResponse, validationResponse }: SuggestionsPanelProps) {
+export function SuggestionsPanel({ currentPage, currentIdea, isProfileSetup = false, apiResponse, validationResponse, planResponse }: SuggestionsPanelProps) {
   const getSuggestions = () => {
     if (isProfileSetup) {
       return {
@@ -262,11 +263,104 @@ export function SuggestionsPanel({ currentPage, currentIdea, isProfileSetup = fa
     return allRefs.slice(0, 10); // Limit to 10 items
   };
   
+  // Get plan references for business-plan, planner, implementation, outcomes pages
+  const getPlanReferences = () => {
+    const planPages = ['business-plan', 'planner', 'implementation', 'outcomes'];
+    if (!planPages.includes(currentPage) || !planResponse?.final_output?.references) {
+      return [];
+    }
+    
+    const refs = planResponse.final_output.references;
+    const allRefs: Array<{ type: string, title: string, source: string, url: string }> = [];
+    
+    // Filter out placeholders
+    const isPlaceholder = (title: string) => title.toLowerCase().includes('placeholder');
+    
+    // Combine all reference types
+    if (refs.videos) {
+      refs.videos.forEach((ref: any) => {
+        if (!isPlaceholder(ref.title || '')) {
+          allRefs.push({ 
+            type: 'video', 
+            title: ref.title || 'Video Resource', 
+            source: ref.author || 'Video', 
+            url: ref.link || '#'
+          });
+        }
+      });
+    }
+    if (refs.articles) {
+      refs.articles.forEach((ref: any) => {
+        if (!isPlaceholder(ref.title || '')) {
+          allRefs.push({ 
+            type: 'article', 
+            title: ref.title || 'Article', 
+            source: ref.author || 'Article', 
+            url: ref.link || '#'
+          });
+        }
+      });
+    }
+    if (refs.case_studies) {
+      refs.case_studies.forEach((ref: any) => {
+        if (!isPlaceholder(ref.title || '')) {
+          allRefs.push({ 
+            type: 'case_study', 
+            title: ref.title || 'Case Study', 
+            source: ref.author || 'Case Study', 
+            url: ref.link || '#'
+          });
+        }
+      });
+    }
+    if (refs.vendors) {
+      refs.vendors.forEach((ref: any) => {
+        if (!isPlaceholder(ref.title || '')) {
+          allRefs.push({ 
+            type: 'vendor', 
+            title: ref.title || 'Vendor', 
+            source: ref.author || 'Vendor', 
+            url: ref.link || '#'
+          });
+        }
+      });
+    }
+    if (refs.success_stories) {
+      refs.success_stories.forEach((ref: any) => {
+        if (!isPlaceholder(ref.title || '')) {
+          allRefs.push({ 
+            type: 'success_story', 
+            title: ref.title || 'Success Story', 
+            source: ref.author || 'Success Story', 
+            url: ref.link || '#'
+          });
+        }
+      });
+    }
+    if (refs.failure_stories) {
+      refs.failure_stories.forEach((ref: any) => {
+        if (!isPlaceholder(ref.title || '')) {
+          allRefs.push({ 
+            type: 'failure_story', 
+            title: ref.title || 'Failure Story', 
+            source: ref.author || 'Lesson Learned', 
+            url: ref.link || '#'
+          });
+        }
+      });
+    }
+    
+    return allRefs.slice(0, 10); // Limit to 10 items
+  };
+
   const apiReferences = getApiReferences();
   const validationReferences = getValidationReferences();
+  const planReferences = getPlanReferences();
   
-  // Determine which references to show
-  const displayReferences = validationReferences.length > 0 ? validationReferences : apiReferences;
+  // Determine which references to show (priority: plan > validation > api)
+  const displayReferences = planReferences.length > 0 
+    ? planReferences 
+    : (validationReferences.length > 0 ? validationReferences : apiReferences);
 
   return (
     <aside className="w-80 bg-white border-l border-gray-200">
@@ -281,7 +375,17 @@ export function SuggestionsPanel({ currentPage, currentIdea, isProfileSetup = fa
             <CardHeader>
               <CardTitle className="text-base">
                 {displayReferences.length > 0 
-                  ? (currentPage === 'validation' ? 'Validation Resources' : 'Idea Generation Resources')
+                  ? (currentPage === 'validation' 
+                      ? 'Validation Resources' 
+                      : currentPage === 'business-plan'
+                        ? 'Business Planning Resources'
+                        : currentPage === 'planner'
+                          ? 'Planning Resources'
+                          : currentPage === 'implementation'
+                            ? 'Implementation Resources'
+                            : currentPage === 'outcomes'
+                              ? 'Success Metrics Resources'
+                              : 'Idea Generation Resources')
                   : suggestions.title}
               </CardTitle>
             </CardHeader>

@@ -18,8 +18,13 @@ interface JourneyStage {
   }[];
 }
 
-export function JourneyMapView() {
-  const stages: JourneyStage[] = [
+interface JourneyMapViewProps {
+  journeyData?: any;
+}
+
+export function JourneyMapView({ journeyData }: JourneyMapViewProps) {
+  // Default/mock stages
+  const defaultStages: JourneyStage[] = [
     {
       id: 'idea',
       title: 'Idea Creation',
@@ -106,8 +111,23 @@ export function JourneyMapView() {
     },
   ];
 
-  const currentStageIndex = stages.findIndex(s => s.status === 'current');
-  const overallProgress = ((stages.filter(s => s.status === 'completed').length + 
+  // Use API data if available, otherwise use defaults
+  const stages = journeyData?.phases?.length > 0 
+    ? journeyData.phases.map((phase: any, index: number) => ({
+        id: phase.phase_id || `phase_${index}`,
+        title: phase.title || 'Phase',
+        icon: index === 0 ? Lightbulb : index === 1 ? CheckCircle : index === 2 ? FileText : index === 3 ? Calendar : index === 4 ? Rocket : Target,
+        status: phase.status?.toLowerCase() || 'upcoming',
+        progress: phase.progress || 0,
+        completedDate: phase.completed_date,
+        estimatedDate: phase.estimated_completion,
+        description: phase.description || '',
+        keyMetrics: phase.key_metrics || []
+      }))
+    : defaultStages;
+
+  const currentStageIndex = stages.findIndex((s: any) => s.status === 'current');
+  const overallProgress = ((stages.filter((s: any) => s.status === 'completed').length + 
                              (stages[currentStageIndex]?.progress || 0) / 100) / stages.length) * 100;
 
   const getStatusColor = (status: string) => {
@@ -174,7 +194,7 @@ export function JourneyMapView() {
         <div className="absolute left-8 top-0 bottom-0 w-1 bg-gray-200" style={{ height: 'calc(100% - 60px)' }}></div>
 
         <div className="space-y-6">
-          {stages.map((stage) => {
+          {stages.map((stage: JourneyStage) => {
             const Icon = stage.icon;
             const isCurrent = stage.status === 'current';
             
@@ -229,7 +249,7 @@ export function JourneyMapView() {
 
                       {/* Key Metrics Grid */}
                       <div className="grid grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
-                        {stage.keyMetrics.map((metric, idx) => (
+                        {stage.keyMetrics.map((metric: any, idx: number) => (
                           <div key={idx} className="text-center">
                             <div className="text-xs text-gray-600 mb-1">{metric.label}</div>
                             <div className="text-gray-900">{metric.value}</div>

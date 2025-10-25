@@ -30,8 +30,13 @@ export interface OutcomeTask {
 }
 
 export function OutcomeDetailDialog({ isOpen, onClose, outcome }: OutcomeDetailDialogProps) {
+  // Safety check
+  if (!outcome) {
+    return null;
+  }
+
   const getStatusIcon = () => {
-    switch (outcome.status) {
+    switch (outcome?.status) {
       case 'exceeded':
         return <TrendingUp className="w-6 h-6 text-green-600" />;
       case 'met':
@@ -150,25 +155,33 @@ export function OutcomeDetailDialog({ isOpen, onClose, outcome }: OutcomeDetailD
             <CardContent className="space-y-4">
               <div>
                 <h4 className="text-sm text-green-800 mb-2">What went well:</h4>
-                <ul className="space-y-2">
-                  {outcome.positiveImpacts.map((impact, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-green-900">
-                      <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                      <span>{impact}</span>
-                    </li>
-                  ))}
-                </ul>
+                {outcome.positiveImpacts?.length > 0 ? (
+                  <ul className="space-y-2">
+                    {outcome.positiveImpacts.map((impact, index) => (
+                      <li key={index} className="flex items-start gap-2 text-sm text-green-900">
+                        <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        <span>{impact}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">No positive impacts data available</p>
+                )}
               </div>
 
               <div>
                 <h4 className="text-sm text-green-800 mb-2">Reasons for success:</h4>
-                <ul className="space-y-1">
-                  {outcome.reasons.positive.map((reason, index) => (
-                    <li key={index} className="text-sm text-green-900 ml-4">
-                      • {reason}
-                    </li>
-                  ))}
-                </ul>
+                {outcome.reasons?.positive?.length > 0 ? (
+                  <ul className="space-y-1">
+                    {outcome.reasons.positive.map((reason, index) => (
+                      <li key={index} className="text-sm text-green-900 ml-4">
+                        • {reason}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">No success reasons data available</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -184,25 +197,33 @@ export function OutcomeDetailDialog({ isOpen, onClose, outcome }: OutcomeDetailD
             <CardContent className="space-y-4">
               <div>
                 <h4 className="text-sm text-orange-800 mb-2">What didn't go as planned:</h4>
-                <ul className="space-y-2">
-                  {outcome.negativeImpacts.map((impact, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-orange-900">
-                      <XCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                      <span>{impact}</span>
-                    </li>
-                  ))}
-                </ul>
+                {outcome.negativeImpacts?.length > 0 ? (
+                  <ul className="space-y-2">
+                    {outcome.negativeImpacts.map((impact, index) => (
+                      <li key={index} className="flex items-start gap-2 text-sm text-orange-900">
+                        <XCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        <span>{impact}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">No challenges data available</p>
+                )}
               </div>
 
               <div>
                 <h4 className="text-sm text-orange-800 mb-2">Root causes:</h4>
-                <ul className="space-y-1">
-                  {outcome.reasons.negative.map((reason, index) => (
-                    <li key={index} className="text-sm text-orange-900 ml-4">
-                      • {reason}
-                    </li>
-                  ))}
-                </ul>
+                {outcome.reasons?.negative?.length > 0 ? (
+                  <ul className="space-y-1">
+                    {outcome.reasons.negative.map((reason, index) => (
+                      <li key={index} className="text-sm text-orange-900 ml-4">
+                        • {reason}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">No root causes data available</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -213,14 +234,18 @@ export function OutcomeDetailDialog({ isOpen, onClose, outcome }: OutcomeDetailD
               <CardTitle className="text-base text-blue-900">Recommendations for Future</CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-2">
-                {outcome.recommendations.map((recommendation, index) => (
+              {outcome.recommendations?.length > 0 ? (
+                <ul className="space-y-2">
+                  {outcome.recommendations.map((recommendation, index) => (
                   <li key={index} className="flex items-start gap-2 text-sm text-blue-900">
                     <span className="text-blue-600 flex-shrink-0">{index + 1}.</span>
                     <span>{recommendation}</span>
                   </li>
-                ))}
-              </ul>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-gray-500 italic">No recommendations available</p>
+              )}
             </CardContent>
           </Card>
           </div>

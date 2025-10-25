@@ -20,7 +20,9 @@ export function ProfilePage({ userProfile, onEdit }: ProfilePageProps) {
   const [verifyError, setVerifyError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResendingOTP, setIsResendingOTP] = useState(false);
-  const [emailVerified, setEmailVerified] = useState(userProfile?.emailVerified || false);
+  // Check email_verified from user_account object
+  const user = authApi.getStoredUser();
+  const [emailVerified, setEmailVerified] = useState(user?.user_account?.email_verified || false);
   const [isSaving, setIsSaving] = useState(false);
   const [editError, setEditError] = useState('');
   
@@ -88,16 +90,53 @@ export function ProfilePage({ userProfile, onEdit }: ProfilePageProps) {
     setEditError('');
     try {
       setIsSaving(true);
-      const user = authApi.getStoredUser();
-      if (!user) {
-        setEditError('User not found');
+      const currentUser = authApi.getStoredUser();
+      if (!currentUser) {
+        setEditError('User not found. Please login again.');
         return;
       }
-      await authApi.updateProfile(user.user_account.id, editFormData);
+      
+      // Use user.id instead of user.user_account.id
+      const response = await authApi.updateProfile(currentUser.id, editFormData);
+      
+      // Use the profile from the update response directly
+      const sessionData = localStorage.getItem('executionPlannerSession');
+      if (sessionData && response.profile) {
+        const session = JSON.parse(sessionData);
+        const profile = response.profile;
+        
+        // Update user.user_account.profile with new data
+        if (session.user && session.user.user_account) {
+          session.user.user_account.profile = profile;
+        }
+        
+        // Update userProfile with new data
+        session.userProfile = {
+          ...session.userProfile,
+          fullName: profile.fullname,
+          currentRole: profile.professional_title,
+          professionalTitle: profile.professional_title,
+          company: profile.company,
+          currentIndustry: profile.industry,
+          industry: profile.industry,
+          yearsOfExperience: profile.years_of_experience,
+          businessType: profile.businessType,
+          companySize: profile.companySize,
+          fundingStage: profile.fundingStage,
+          address: profile.location || '',
+          location: profile.location || '',
+          dateOfBirth: profile.date_of_birth,
+          gender: profile.gender,
+        };
+        
+        localStorage.setItem('executionPlannerSession', JSON.stringify(session));
+      }
+      
       setShowEditModal(false);
-      alert('Profile updated successfully! Please refresh the page to see changes.');
+      alert('Profile updated successfully!');
       window.location.reload();
     } catch (e: any) {
+      console.error('[ProfilePage] Error updating profile:', e);
       setEditError(e.message || 'Failed to update profile');
     } finally {
       setIsSaving(false);

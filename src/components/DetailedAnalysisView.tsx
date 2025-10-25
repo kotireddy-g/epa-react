@@ -5,6 +5,7 @@ import {
   MapPin, Clock, Rocket, CheckCircle, BarChart3, Trophy, Package
 } from 'lucide-react';
 import { FinalOutput } from '../services/ideaAnalysisApi';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 interface DetailedAnalysisViewProps {
   data: FinalOutput;
@@ -171,6 +172,37 @@ export function DetailedAnalysisView({ data }: DetailedAnalysisViewProps) {
                   );
                 })}
             </div>
+
+            {/* Pie Chart for TAM, SAM, SOM */}
+            {(stats_summary.TAM || stats_summary.SAM || stats_summary.SOM) && (
+              <div className="mt-6">
+                <h4 className="font-semibold mb-3">Market Size Distribution</h4>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: 'TAM', value: parseFloat(String(stats_summary.TAM || '0').replace(/[^0-9.]/g, '')) || 100000 },
+                        { name: 'SAM', value: parseFloat(String(stats_summary.SAM || '0').replace(/[^0-9.]/g, '')) || 20000 },
+                        { name: 'SOM', value: parseFloat(String(stats_summary.SOM || '0').replace(/[^0-9.]/g, '')) || 2000 },
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      <Cell fill="#3b82f6" />
+                      <Cell fill="#8b5cf6" />
+                      <Cell fill="#10b981" />
+                    </Pie>
+                    <Tooltip formatter={(value: any) => `₹${value} Crores`} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
             
             {stats_summary.price_bands && (
               <div className="mt-6">
@@ -252,7 +284,9 @@ export function DetailedAnalysisView({ data }: DetailedAnalysisViewProps) {
               {budget_fit_tiers_table.map((tier: any, idx: number) => (
                 <div key={idx} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-lg font-semibold">{tier.tier} Tier</h4>
+                    <h4 className="text-lg font-semibold">
+                      {tier.tier ? tier.tier.charAt(0).toUpperCase() + tier.tier.slice(1) : ''} Tier
+                    </h4>
                     <Badge className="text-lg">{tier.cap}</Badge>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
@@ -385,6 +419,26 @@ export function DetailedAnalysisView({ data }: DetailedAnalysisViewProps) {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Bar Chart for Competitor Gaps */}
+            <div className="mt-6">
+              <h4 className="font-semibold mb-3">Competitive Advantage Visualization</h4>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={competitor_gap_table.map((item: any) => ({
+                  name: item.competitor || item.name || 'Competitor',
+                  gap: item.gap?.length || 10,
+                  differentiator: item.differentiator?.length || 10,
+                }))}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="gap" fill="#f59e0b" name="Gap Identified" />
+                  <Bar dataKey="differentiator" fill="#10b981" name="Our Differentiator" />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>

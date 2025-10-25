@@ -230,6 +230,11 @@ export function NewValidationPage({
   const [validationResponse, setValidationResponse] = useState<ValidationResponse | null>(null);
   const [showFollowupDialog, setShowFollowupDialog] = useState(false);
 
+  // Check if current section is complete (all questions answered)
+  const isSectionComplete = (sectionKey: keyof typeof VALIDATION_QUESTIONS) => {
+    return VALIDATION_QUESTIONS[sectionKey].every(q => answers[q.id]);
+  };
+
   // Calculate per-section confidence using formula: Sum of selected option values / 25 × 100
   const calculateSectionConfidence = (sectionKey: keyof typeof VALIDATION_QUESTIONS) => {
     const questions = VALIDATION_QUESTIONS[sectionKey];
@@ -253,6 +258,24 @@ export function NewValidationPage({
   const financialConfidence = calculateSectionConfidence('financial');
   const overallConfidence = Math.round((ideaConfidence + personaConfidence + networkConfidence + financialConfidence) / 4);
 
+  // New validation logic: All sections must have at least 50% AND overall >= 70%
+  const allSectionsComplete = 
+    isSectionComplete('idea') && 
+    isSectionComplete('persona') && 
+    isSectionComplete('network') && 
+    isSectionComplete('financial');
+  
+  const allSectionsAbove50 = 
+    ideaConfidence >= 50 && 
+    personaConfidence >= 50 && 
+    networkConfidence >= 50 && 
+    financialConfidence >= 50;
+  
+  const canSubmitValidation = 
+    allSectionsComplete && 
+    allSectionsAbove50 && 
+    overallConfidence >= 70;
+
   // Interpretations
   const getInterpretation = (score: number) => {
     if (score >= 80) return { label: 'High Confidence', color: 'text-green-600' };
@@ -260,18 +283,31 @@ export function NewValidationPage({
     return { label: 'Low Confidence', color: 'text-red-600' };
   };
 
-  // Check if current section is complete
-  const isSectionComplete = (sectionKey: keyof typeof VALIDATION_QUESTIONS) => {
-    return VALIDATION_QUESTIONS[sectionKey].every(q => answers[q.id]);
-  };
-
   const handleAnswerChange = (questionId: string, value: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
   };
 
   const handleSubmitValidation = async () => {
-    if (overallConfidence < 76) {
-      alert('Overall confidence score must be at least 76% to proceed.');
+    // Check if all sections are complete
+    if (!allSectionsComplete) {
+      alert('Please answer all questions in all four sections before submitting.');
+      return;
+    }
+    
+    // Check if all sections have at least 50%
+    if (!allSectionsAbove50) {
+      const belowSections = [];
+      if (ideaConfidence < 50) belowSections.push(`Idea (${ideaConfidence}%)`);
+      if (personaConfidence < 50) belowSections.push(`Persona (${personaConfidence}%)`);
+      if (networkConfidence < 50) belowSections.push(`Network (${networkConfidence}%)`);
+      if (financialConfidence < 50) belowSections.push(`Financial (${financialConfidence}%)`);
+      alert(`Each section must have at least 50% confidence. Below 50%: ${belowSections.join(', ')}`);
+      return;
+    }
+    
+    // Check overall confidence
+    if (overallConfidence < 70) {
+      alert(`Overall confidence score must be at least 70% to proceed. Current: ${overallConfidence}%`);
       return;
     }
 
@@ -367,21 +403,26 @@ export function NewValidationPage({
         <CardContent className="pt-6">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-700">Overall Confidence Score</span>
-            <span className={`text-2xl font-bold ${overallConfidence >= 76 ? 'text-green-600' : 'text-orange-600'}`}>
+            <span className={`text-2xl font-bold ${overallConfidence >= 70 ? 'text-green-600' : 'text-orange-600'}`}>
               {overallConfidence}%
             </span>
           </div>
           <Progress value={overallConfidence} className="h-3" />
           <p className="text-xs text-gray-600 mt-2">
-            {overallConfidence >= 76 ? (
+            {canSubmitValidation ? (
               <span className="flex items-center gap-1 text-green-600">
                 <CheckCircle2 className="w-4 h-4" />
-                Ready to submit! Your confidence score meets the minimum requirement.
+                Ready to submit! All requirements met (70% overall, 50% per section, all questions answered).
               </span>
             ) : (
               <span className="flex items-center gap-1 text-orange-600">
                 <AlertCircle className="w-4 h-4" />
-                Need {76 - overallConfidence}% more to reach minimum 76% confidence score
+                {!allSectionsComplete 
+                  ? 'Please answer all questions in all sections'
+                  : !allSectionsAbove50
+                  ? 'Each section must have at least 50% confidence'
+                  : `Need ${70 - overallConfidence}% more to reach minimum 70% confidence score`
+                }
               </span>
             )}
           </p>
@@ -482,10 +523,10 @@ export function NewValidationPage({
           Previous Section
         </Button>
 
-        {currentSection === 'financial' ? (
+        {canSubmitValidation ? (
           <Button
             onClick={handleSubmitValidation}
-            disabled={overallConfidence < 76 || isValidating}
+            disabled={isValidating}
             className="bg-green-600 hover:bg-green-700"
           >
             {isValidating ? 'Validating...' : 'Submit Validation'}
@@ -493,17 +534,19 @@ export function NewValidationPage({
         ) : (
           <Button
             onClick={() => {
-              const currentIndex = sections.findIndex(s => s.key === currentSection);
+              const sections: Array<keyof typeof VALIDATION_QUESTIONS> = ['idea', 'persona', 'network', 'financial'];
+              const currentIndex = sections.indexOf(currentSection);
               if (currentIndex < sections.length - 1) {
-                setCurrentSection(sections[currentIndex + 1].key as any);
+                setCurrentSection(sections[currentIndex + 1]);
               }
             }}
+            disabled={!isSectionComplete(currentSection)}
+            className="bg-blue-600 hover:bg-blue-700"
           >
             Next Section
           </Button>
         )}
       </div>
-
       {/* Analyzing Dialog */}
       <AnalyzingDialog open={isValidating} />
 

@@ -41,9 +41,21 @@ export function AIFollowupQuestionsDialog({
 
   const currentQuestion = questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
-  const allAnswered = Object.keys(answers).length === questions.length;
+  
+  // Check if all questions are answered with non-empty, non-whitespace responses
+  const allAnswered = questions.every((_, index) => {
+    const answer = answers[index];
+    return answer && answer.trim().length > 0;
+  });
+  
+  // Check if current question is answered with non-empty, non-whitespace response
+  const currentAnswered = () => {
+    const answer = answers[currentQuestionIndex];
+    return answer && answer.trim().length > 0;
+  };
 
   const handleAnswer = (answer: string) => {
+    // Store the answer as-is, validation happens on navigation/submit
     setAnswers(prev => ({ ...prev, [currentQuestionIndex]: answer }));
   };
 
@@ -167,7 +179,7 @@ export function AIFollowupQuestionsDialog({
             {/* DYNAMIC: Show checkboxes if options exist, otherwise show text input */}
             {currentQuestion.options && currentQuestion.options.length > 0 ? (
               <div className="space-y-3">
-                <p className="text-sm text-gray-600">Select all that apply:</p>
+                <p className="text-sm text-gray-600">Select all that apply: *</p>
                 {currentQuestion.options.map((option, index) => (
                   <div key={index} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
                     <Checkbox
@@ -183,14 +195,23 @@ export function AIFollowupQuestionsDialog({
                     </Label>
                   </div>
                 ))}
+                {answers[currentQuestionIndex] !== undefined && !currentAnswered() && (
+                  <p className="text-sm text-red-600 mt-1">* Please select at least one option</p>
+                )}
               </div>
             ) : (
-              <Textarea
-                placeholder="Type your answer here..."
-                value={answers[currentQuestionIndex] || ''}
-                onChange={(e) => handleAnswer(e.target.value)}
-                className="min-h-[100px]"
-              />
+              <div>
+                <Textarea
+                  placeholder="Type your answer here... *"
+                  value={answers[currentQuestionIndex] || ''}
+                  onChange={(e) => handleAnswer(e.target.value)}
+                  className="min-h-[100px]"
+                  required
+                />
+                {answers[currentQuestionIndex] !== undefined && !currentAnswered() && (
+                  <p className="text-sm text-red-600 mt-1">* This field is required and cannot be empty or just spaces</p>
+                )}
+              </div>
             )}
           </div>
 
@@ -232,7 +253,7 @@ export function AIFollowupQuestionsDialog({
             ) : (
               <Button
                 onClick={handleNext}
-                disabled={!answers[currentQuestionIndex] || isSubmitting}
+                disabled={!currentAnswered() || isSubmitting}
               >
                 Next Question
               </Button>

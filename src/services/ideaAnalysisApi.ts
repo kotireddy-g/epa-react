@@ -238,6 +238,41 @@ export interface PlanResponse {
   meta?: any;
 }
 
+// User Ideas List Types
+export interface UserIdeaItem {
+  idea_id: string;
+  analysis_data?: {
+    validation_data?: {
+      idea_id: string;
+      idea_description?: string;
+      verdict?: {
+        text: string;
+        sub_text?: string;
+        tip?: string;
+      };
+      market_attributes?: MarketAttributes;
+      key_points_summary?: KeyPointsSummary;
+      [key: string]: any;
+    };
+    stage?: string;
+    created_at?: string;
+    updated_at?: string;
+  };
+  validation_data?: {
+    validation_completed_data?: any;
+    stage?: string;
+    calculated_confidence_score?: string;
+    created_at?: string;
+    updated_at?: string;
+  };
+  plan_data?: {
+    [key: string]: any;
+    stage?: string;
+    created_at?: string;
+    updated_at?: string;
+  };
+}
+
 class IdeaAnalysisApiService {
   /**
    * Analyze an idea using the /api/analyse endpoint
@@ -257,12 +292,8 @@ class IdeaAnalysisApiService {
     });
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/idea/analyze/`, {
+      const response = await authApi.fetchWithAuth(`${API_BASE_URL}/api/idea/analyze/`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(payload),
       });
 
@@ -306,12 +337,8 @@ class IdeaAnalysisApiService {
     });
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/idea/validate/`, {
+      const response = await authApi.fetchWithAuth(`${API_BASE_URL}/api/idea/validate/`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(payload),
       });
 
@@ -438,12 +465,8 @@ class IdeaAnalysisApiService {
     });
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/idea/plan/`, {
+      const response = await authApi.fetchWithAuth(`${API_BASE_URL}/api/idea/plan/`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(payload),
       });
 
@@ -465,6 +488,44 @@ class IdeaAnalysisApiService {
       return data;
     } catch (error) {
       console.error('[IdeaAnalysisAPI] Error submitting plan:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all ideas for the logged-in user
+   */
+  async getUserIdeas(): Promise<UserIdeaItem[]> {
+    const accessToken = authApi.getAccessToken();
+    
+    if (!accessToken) {
+      console.error('[IdeaAnalysisAPI] No access token available');
+      throw new Error('Authentication required. Please login.');
+    }
+
+    console.log('[IdeaAnalysisAPI] Fetching user ideas...');
+
+    try {
+      const response = await authApi.fetchWithAuth(`${API_BASE_URL}/idea/user/`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.error('[IdeaAnalysisAPI] Unauthorized (401)');
+          throw new Error('Unauthorized: Please re-authenticate and try again.');
+        }
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[IdeaAnalysisAPI] API error:', response.status, errorData);
+        throw new Error(errorData.message || `API returned ${response.status}`);
+      }
+
+      const data: UserIdeaItem[] = await response.json();
+      console.log('[IdeaAnalysisAPI] User ideas fetched successfully:', data.length, 'ideas');
+
+      return data;
+    } catch (error) {
+      console.error('[IdeaAnalysisAPI] Error fetching user ideas:', error);
       throw error;
     }
   }

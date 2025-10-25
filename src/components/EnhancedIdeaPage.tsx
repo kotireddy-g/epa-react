@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Edit, Sparkles, Shield, Users, Target } from 'lucide-react';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
@@ -12,7 +12,7 @@ import { MarketAnalysisDialog } from './MarketAnalysisDialog';
 import { IdeaConfirmationDialog } from './IdeaConfirmationDialog';
 import { AnalyzingDialog } from './AnalyzingDialog';
 import { DetailedAnalysisView } from './DetailedAnalysisView';
-import { ideaAnalysisApi, type AnalyseResponse } from '../services/ideaAnalysisApi';
+import { ideaAnalysisApi, type AnalyseResponse, type UserIdeaItem } from '../services/ideaAnalysisApi';
 import { v4 as uuidv4 } from 'uuid';
 
 interface IdeaPageProps {
@@ -21,6 +21,9 @@ interface IdeaPageProps {
   onIdeaAccept: (idea: Idea) => void;
   onIdeaUpdate: (idea: Idea) => void;
   onApiResponse?: (response: AnalyseResponse | null) => void;
+  onNavigateToValidation?: (ideaId: string, validationData: any) => void;
+  onNavigateToPlan?: (ideaId: string, planData: any) => void;
+  onShowFollowupQuestions?: (questions: any[]) => void;
 }
 
 interface AnalysisResult {
@@ -65,7 +68,7 @@ const FIXED_KEYWORDS: (keyof IdeaKeywords)[] = [
   'metrics'
 ];
 
-export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiResponse }: IdeaPageProps) {
+export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiResponse, onNavigateToValidation, onNavigateToPlan, onShowFollowupQuestions }: IdeaPageProps) {
   const [showJourneyDialog, setShowJourneyDialog] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [summary, setSummary] = useState('');
@@ -76,6 +79,9 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [apiResponse, setApiResponse] = useState<any>(null);
   const [ideaId, setIdeaId] = useState('');
+  const [userIdeas, setUserIdeas] = useState<UserIdeaItem[]>([]);
+  const [isLoadingIdeas, setIsLoadingIdeas] = useState(true);
+  const [ideasError, setIdeasError] = useState('');
   
   const [summaryKeywords, setSummaryKeywords] = useState<IdeaKeywords>({
     location: '',
@@ -111,6 +117,27 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
 
   const [keyPoints, setKeyPoints] = useState<KeyPoints | null>(null);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
+
+  // Fetch user ideas on component mount
+  useEffect(() => {
+    const fetchUserIdeas = async () => {
+      try {
+        setIsLoadingIdeas(true);
+        setIdeasError('');
+        const ideas = await ideaAnalysisApi.getUserIdeas();
+        // Ensure we always set an array
+        setUserIdeas(Array.isArray(ideas) ? ideas : []);
+      } catch (error: any) {
+        console.error('[EnhancedIdeaPage] Error fetching user ideas:', error);
+        setIdeasError(error.message || 'Failed to load ideas');
+        setUserIdeas([]); // Set empty array on error
+      } finally {
+        setIsLoadingIdeas(false);
+      }
+    };
+
+    fetchUserIdeas();
+  }, []);
 
   // Extract keywords from text (robust, covers synonyms and free-form input)
   const extractKeywordsFromText = (text: string): Partial<IdeaKeywords> => {
@@ -163,21 +190,35 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
     });
 
     // 2) Heuristics
-    // Location: detect title-cased words after prepositions
+    // Location: detect words after prepositions (case-insensitive for flexibility)
     if (!extracted.location) {
-      const m = /(in|at|based in|from)\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)/.exec(text);
-      if (m) extracted.location = m[2];
+      // Try title-cased first
+      let m = /(in|at|based in|from)\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)/.exec(text);
+      if (m) {
+        extracted.location = m[2];
+      } else {
+        // Try any word after location prepositions (handles lowercase like "hyderabad")
+        m = /(in|at|based in|from)\s+([a-zA-Z]+(?:\s+[a-zA-Z]+)?)/.exec(text);
+        if (m) extracted.location = m[2];
+      }
     }
 
-    // Budget: currency, ranges
+    // Budget: currency, ranges (enhanced for Indian formats)
     if (!extracted.budget) {
-      const m = /(\$\s?\d[\d,]*(?:\.\d+)?\s?(k|m|million|thousand)?|\d+\s?(usd|dollars))/i.exec(text);
-      if (m) extracted.budget = m[0];
+      // Indian formats: 80L, 80 Lakhs, 20C, 20 Crores, 5Cr, etc.
+      const indianMatch = /(\d+(?:\.\d+)?\s*(?:l|lakh|lakhs|c|cr|crore|crores)(?:\s+(?:rupees|inr|budget|investment))?)/i.exec(text);
+      if (indianMatch) {
+        extracted.budget = indianMatch[0];
+      } else {
+        // International formats: $50k, $1M, 1000 USD, etc.
+        const intlMatch = /(\$\s?\d[\d,]*(?:\.\d+)?\s?(?:k|m|million|thousand|billion)?|\d+\s?(?:usd|dollars|inr|rupees))/i.exec(text);
+        if (intlMatch) extracted.budget = intlMatch[0];
+      }
     }
 
-    // Timeline: durations or deadlines
+    // Timeline: durations or deadlines (enhanced patterns)
     if (!extracted.timeline) {
-      const m = /(within\s+\d+\s+(days|weeks|months|years)|\d+\s+(days|weeks|months|years)|by\s+q[1-4]\s*\d{4}|by\s+\w+\s+\d{4})/i.exec(text);
+      const m = /(in\s+next\s+\d+\s+(days|weeks|months|years)|within\s+\d+\s+(days|weeks|months|years)|\d+\s+(days|weeks|months|years)|next\s+\d+\s+(days|weeks|months|years)|by\s+q[1-4]\s*\d{4}|by\s+\w+\s+\d{4})/i.exec(text);
       if (m) extracted.timeline = m[0];
     }
 
@@ -577,6 +618,135 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
           />
         )}
 
+        {/* User Ideas List */}
+        {!showCreateForm && (
+          <div className="mb-8">
+            {isLoadingIdeas ? (
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                <p className="mt-4 text-gray-600">Loading your ideas...</p>
+              </div>
+            ) : ideasError ? (
+              <Card className="border-red-200 bg-red-50">
+                <CardContent className="pt-6">
+                  <p className="text-red-600">{ideasError}</p>
+                </CardContent>
+              </Card>
+            ) : userIdeas.length === 0 ? (
+              <Card className="border-dashed border-2">
+                <CardContent className="pt-12 pb-12 text-center">
+                  <Sparkles className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No ideas yet</h3>
+                  <p className="text-gray-600 mb-4">Start your journey by creating your first idea</p>
+                  <Button 
+                    onClick={handleStartCreate}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Your First Idea
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Array.isArray(userIdeas) && userIdeas.map((idea) => {
+                  const ideaDescription = idea.analysis_data?.validation_data?.idea_description || 'No description';
+                  const verdict = idea.analysis_data?.validation_data?.verdict;
+                  const marketAttrs = idea.analysis_data?.validation_data?.market_attributes;
+                  
+                  // Determine status based on available data
+                  const hasAnalysis = !!idea.analysis_data;
+                  const hasValidation = !!idea.validation_data;
+                  const hasPlan = !!idea.plan_data;
+                  
+                  let status = 'Draft';
+                  let statusColor = 'bg-gray-500';
+                  
+                  if (hasAnalysis && hasValidation && hasPlan) {
+                    status = 'Plan';
+                    statusColor = 'bg-purple-500';
+                  } else if (hasAnalysis && hasValidation) {
+                    status = 'Validated';
+                    statusColor = 'bg-green-500';
+                  } else if (hasAnalysis) {
+                    status = 'Analysis';
+                    statusColor = 'bg-blue-500';
+                  }
+                  
+                  const handleViewDetails = () => {
+                    if (hasAnalysis && hasValidation && hasPlan) {
+                      // Navigate to business plan tab with plan_data
+                      if (onNavigateToPlan) {
+                        onNavigateToPlan(idea.idea_id, idea.plan_data);
+                      }
+                    } else if (hasAnalysis && hasValidation) {
+                      // Navigate to validation tab and show AI followup questions
+                      const followupQuestions = idea.validation_data?.validation_completed_data?.ai_followup_questions;
+                      if (followupQuestions && onShowFollowupQuestions) {
+                        onShowFollowupQuestions(followupQuestions);
+                      }
+                      if (onNavigateToValidation) {
+                        onNavigateToValidation(idea.idea_id, idea.validation_data);
+                      }
+                    } else if (hasAnalysis) {
+                      // Navigate to validation tab to fill answers
+                      if (onNavigateToValidation) {
+                        onNavigateToValidation(idea.idea_id, idea.analysis_data);
+                      }
+                    }
+                  };
+                  
+                  return (
+                    <Card key={idea.idea_id} className="hover:shadow-lg transition-shadow">
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <Badge className={`mb-2 ${statusColor} text-white`}>{status}</Badge>
+                            <CardTitle className="text-base line-clamp-2">{ideaDescription}</CardTitle>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {verdict && (
+                          <p className="text-sm text-gray-600 mb-3 line-clamp-2">{verdict.text}</p>
+                        )}
+                        <div className="space-y-2 text-xs text-gray-500">
+                          {marketAttrs?.location && (
+                            <div className="flex items-center gap-2">
+                              <Target className="w-3 h-3" />
+                              <span>{marketAttrs.location}</span>
+                            </div>
+                          )}
+                          {marketAttrs?.budget && (
+                            <div className="flex items-center gap-2">
+                              <span>💰</span>
+                              <span>{marketAttrs.budget}</span>
+                            </div>
+                          )}
+                          {marketAttrs?.category && (
+                            <div className="flex items-center gap-2">
+                              <span>📁</span>
+                              <span>{marketAttrs.category}</span>
+                            </div>
+                          )}
+                        </div>
+                        <Button 
+                          className="w-full mt-4" 
+                          variant="outline"
+                          size="sm"
+                          onClick={handleViewDetails}
+                        >
+                          View Details
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Idea Input Form */}
         {showCreateForm && (
           <Card className="border-2 border-gray-200">
@@ -617,7 +787,7 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
                           : 'bg-gray-50 border-gray-300 text-gray-600'}`}
                         title={summaryKeywords[keyword] || ''}
                       >
-                        #{keyword}{summaryKeywords[keyword] ? ` (${summaryKeywords[keyword].substring(0, 20)}${summaryKeywords[keyword].length > 20 ? '...' : ''})` : ''}
+                        #{keyword}
                       </Badge>
                     ))}
                   </motion.div>
@@ -727,7 +897,7 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
                                   : 'bg-gray-50 border-gray-300 text-gray-600'}`}
                                 title={detailedKeywords[keyword] || ''}
                               >
-                                #{keyword}{detailedKeywords[keyword] ? ` (${detailedKeywords[keyword].substring(0, 20)}${detailedKeywords[keyword].length > 20 ? '...' : ''})` : ''}
+                                #{keyword}
                               </Badge>
                             ))}
                           </motion.div>

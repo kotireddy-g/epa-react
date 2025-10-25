@@ -259,6 +259,45 @@ export default function App() {
               setIdeas(prev => prev.map(i => i.id === updatedIdea.id ? updatedIdea : i));
             }}
             onApiResponse={setApiResponse}
+            onNavigateToValidation={(ideaId: string, validationData: any) => {
+              // Create or update idea with validation data
+              const newIdea: Idea = {
+                id: ideaId,
+                ideaId: ideaId,
+                summary: validationData?.validation_data?.idea_description || 'Idea',
+                description: validationData?.validation_data?.verdict?.text || '',
+                bulletPoints: [],
+                status: 'draft',
+                createdAt: new Date(),
+                isActive: true,
+                detailedDescription: validationData?.validation_data?.idea_description || '',
+              };
+              setCurrentIdea(newIdea);
+              setValidationResponse(validationData);
+              setCurrentPage('validation');
+            }}
+            onNavigateToPlan={(ideaId: string, planData: any) => {
+              // Create or update idea with plan data
+              const newIdea: Idea = {
+                id: ideaId,
+                ideaId: ideaId,
+                summary: planData?.idea_description || 'Idea',
+                description: planData?.description || '',
+                bulletPoints: [],
+                status: 'planning',
+                createdAt: new Date(),
+                isActive: true,
+                businessPlan: planData,
+              };
+              setCurrentIdea(newIdea);
+              setPlanResponse(planData);
+              setCurrentPage('business-plan');
+            }}
+            onShowFollowupQuestions={(questions: any[]) => {
+              // Store questions to show in dialog
+              console.log('AI Followup Questions:', questions);
+              // You can add state to show a dialog here if needed
+            }}
           />
         )}
         {currentPage === 'validation' && currentIdea && (
@@ -318,6 +357,7 @@ export default function App() {
         currentIdea={currentIdea} 
         apiResponse={apiResponse}
         validationResponse={validationResponse}
+        planResponse={planResponse}
       />
 
       {/* Company Name Dialog */}
@@ -326,6 +366,7 @@ export default function App() {
           isOpen={showCompanyNameDialog}
           idea={currentIdea}
           onConfirm={handleCompanyNameConfirm}
+          apiResponse={apiResponse}
         />
       )}
     </div>
