@@ -203,74 +203,120 @@ export function SuggestionsPanel({ currentPage, currentIdea, isProfileSetup = fa
 
   // Get API references if available for 'idea' page
   const getApiReferences = () => {
-    if (currentPage !== 'idea' || !apiResponse?.final_output?.references) {
+    if (currentPage !== 'idea' || !apiResponse) {
       return [];
     }
     
-    const refs = apiResponse.final_output.references;
+    // Check both live_references and final_output.references
+    const liveRefs = (apiResponse as any).live_references;
+    const finalRefs = apiResponse.final_output?.references;
+    
+    // Prefer live_references if available, otherwise use final_output.references
+    const refs = liveRefs || finalRefs;
+    
+    if (!refs) {
+      return [];
+    }
+    
     const allRefs: Array<{ type: string, title: string, source: string, url: string }> = [];
+    
+    // Filter out placeholders
+    const isPlaceholder = (title: string) => title && title.toLowerCase().includes('placeholder');
     
     // Combine all reference types
     if (refs.videos) {
-      refs.videos.forEach(ref => allRefs.push({ 
-        type: 'video', 
-        title: ref.title || 'Video Resource', 
-        source: ref.reason || 'Video', 
-        url: ref.url 
-      }));
+      refs.videos.forEach((ref: any) => {
+        if (!isPlaceholder(ref.title || '')) {
+          allRefs.push({ 
+            type: 'video', 
+            title: ref.title || 'Video Resource', 
+            source: ref.author || ref.reason || 'Video', 
+            url: ref.link || ref.url || '#'
+          });
+        }
+      });
     }
     if (refs.articles) {
-      refs.articles.forEach(ref => allRefs.push({ 
-        type: 'article', 
-        title: ref.title || 'Article', 
-        source: ref.reason || 'Article', 
-        url: ref.url 
-      }));
+      refs.articles.forEach((ref: any) => {
+        if (!isPlaceholder(ref.title || '')) {
+          allRefs.push({ 
+            type: 'article', 
+            title: ref.title || 'Article', 
+            source: ref.author || ref.reason || 'Article', 
+            url: ref.link || ref.url || '#'
+          });
+        }
+      });
     }
     if (refs.case_studies) {
-      refs.case_studies.forEach(ref => allRefs.push({ 
-        type: 'case_study', 
-        title: ref.title || 'Case Study', 
-        source: ref.reason || 'Case Study', 
-        url: ref.url 
-      }));
+      refs.case_studies.forEach((ref: any) => {
+        if (!isPlaceholder(ref.title || '')) {
+          allRefs.push({ 
+            type: 'case_study', 
+            title: ref.title || 'Case Study', 
+            source: ref.author || ref.reason || 'Case Study', 
+            url: ref.link || ref.url || '#'
+          });
+        }
+      });
     }
     if (refs.vendors) {
-      refs.vendors.forEach(ref => allRefs.push({ 
-        type: 'vendor', 
-        title: ref.title || 'Vendor', 
-        source: ref.reason || 'Vendor', 
-        url: ref.url 
-      }));
+      refs.vendors.forEach((ref: any) => {
+        if (!isPlaceholder(ref.title || '')) {
+          allRefs.push({ 
+            type: 'vendor', 
+            title: ref.title || 'Vendor', 
+            source: ref.author || ref.reason || 'Vendor', 
+            url: ref.link || ref.url || '#'
+          });
+        }
+      });
     }
     if (refs.success_stories) {
-      refs.success_stories.forEach(ref => allRefs.push({ 
-        type: 'success_story', 
-        title: ref.title || 'Success Story', 
-        source: ref.reason || 'Success Story', 
-        url: ref.url 
-      }));
+      refs.success_stories.forEach((ref: any) => {
+        if (!isPlaceholder(ref.title || '')) {
+          allRefs.push({ 
+            type: 'success_story', 
+            title: ref.title || 'Success Story', 
+            source: ref.author || ref.reason || 'Success Story', 
+            url: ref.link || ref.url || '#'
+          });
+        }
+      });
     }
     if (refs.failure_stories) {
-      refs.failure_stories.forEach(ref => allRefs.push({ 
-        type: 'failure_story', 
-        title: ref.title || 'Failure Story', 
-        source: ref.reason || 'Lesson Learned', 
-        url: ref.url 
-      }));
+      refs.failure_stories.forEach((ref: any) => {
+        if (!isPlaceholder(ref.title || '')) {
+          allRefs.push({ 
+            type: 'failure_story', 
+            title: ref.title || 'Failure Story', 
+            source: ref.author || ref.reason || 'Lesson Learned', 
+            url: ref.link || ref.url || '#'
+          });
+        }
+      });
     }
     
-    return allRefs.slice(0, 10); // Limit to 10 items
+    return allRefs; // Return all non-placeholder items
   };
   
   // Get plan references for business-plan, planner, implementation, outcomes pages
   const getPlanReferences = () => {
     const planPages = ['business-plan', 'planner', 'implementation', 'outcomes'];
-    if (!planPages.includes(currentPage) || !planResponse?.final_output?.references) {
+    if (!planPages.includes(currentPage) || !planResponse) {
       return [];
     }
     
-    const refs = planResponse.final_output.references;
+    // Check both live_references and final_output.references
+    const liveRefs = (planResponse as any).live_references;
+    const finalRefs = planResponse.final_output?.references;
+    
+    // Prefer live_references if available, otherwise use final_output.references
+    const refs = liveRefs || finalRefs;
+    
+    if (!refs) {
+      return [];
+    }
     const allRefs: Array<{ type: string, title: string, source: string, url: string }> = [];
     
     // Filter out placeholders
@@ -350,7 +396,7 @@ export function SuggestionsPanel({ currentPage, currentIdea, isProfileSetup = fa
       });
     }
     
-    return allRefs.slice(0, 10); // Limit to 10 items
+    return allRefs; // Return all non-placeholder items
   };
 
   const apiReferences = getApiReferences();

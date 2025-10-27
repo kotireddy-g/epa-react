@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Input } from './ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { FeedbackButton } from './FeedbackButton';
 import { NotesButton } from './NotesButton';
 import { Idea } from '../App';
@@ -37,6 +38,8 @@ interface TaskRow {
 export function BusinessPlanPage({ idea, onComplete, planData }: BusinessPlanPageProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [isTableExpanded, setIsTableExpanded] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [viewingTemplate, setViewingTemplate] = useState<Template | null>(null);
   
   // Initialize tasks from planData or use defaults
   const defaultTasks: TaskRow[] = [
@@ -182,16 +185,125 @@ export function BusinessPlanPage({ idea, onComplete, planData }: BusinessPlanPag
     }
   };
 
+  const handleView = (template: Template) => {
+    setViewingTemplate(template);
+    setViewDialogOpen(true);
+  };
+
   const handleDownload = (template: Template) => {
-    alert(`Downloading ${template.name}... In a real app, this would generate a PDF or Word document.`);
+    // Create a printable HTML content
+    const content = generateTemplateHTML(template);
+    
+    // Create a temporary element
+    const printWindow = window.open('', '', 'height=600,width=800');
+    if (printWindow) {
+      printWindow.document.write(content);
+      printWindow.document.close();
+      
+      // Wait for content to load, then trigger download
+      printWindow.onload = () => {
+        printWindow.print();
+        // Note: Actual PDF generation would require a library like jsPDF or html2pdf
+        setTimeout(() => printWindow.close(), 100);
+      };
+    }
   };
 
   const handlePrint = (template: Template) => {
-    alert(`Printing ${template.name}... In a real app, this would open the print dialog.`);
+    // Create a printable HTML content
+    const content = generateTemplateHTML(template);
+    
+    // Create a temporary element
+    const printWindow = window.open('', '', 'height=600,width=800');
+    if (printWindow) {
+      printWindow.document.write(content);
+      printWindow.document.close();
+      printWindow.onload = () => {
+        printWindow.print();
+      };
+    }
   };
 
-  const handleView = (template: Template) => {
-    alert(`Viewing ${template.name}... In a real app, this would show a preview of the template.`);
+  const generateTemplateHTML = (template: Template) => {
+    // Get template sections from API if available
+    const businessPlan = planData?.final_output?.business_plan || planData?.business_plan;
+    const apiTemplate = businessPlan?.templates;
+    const sections = apiTemplate?.sections || [];
+
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${template.name}</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              padding: 40px;
+              max-width: 800px;
+              margin: 0 auto;
+            }
+            h1 {
+              color: #1f2937;
+              border-bottom: 3px solid #3b82f6;
+              padding-bottom: 10px;
+              margin-bottom: 20px;
+            }
+            h2 {
+              color: #374151;
+              margin-top: 30px;
+              margin-bottom: 15px;
+              font-size: 20px;
+            }
+            .section {
+              margin-bottom: 30px;
+              page-break-inside: avoid;
+            }
+            .description {
+              color: #6b7280;
+              margin-bottom: 30px;
+              font-style: italic;
+            }
+            .detail-list {
+              list-style: none;
+              padding-left: 0;
+            }
+            .detail-list li {
+              padding: 8px 0;
+              border-bottom: 1px solid #e5e7eb;
+            }
+            .detail-list li:before {
+              content: "✓ ";
+              color: #10b981;
+              font-weight: bold;
+              margin-right: 8px;
+            }
+            @media print {
+              body {
+                padding: 20px;
+              }
+              .section {
+                page-break-inside: avoid;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>${template.name}</h1>
+          <p class="description">${template.description}</p>
+          
+          ${sections.map((section: any) => `
+            <div class="section">
+              <h2>${section.title || section.name || section}</h2>
+              ${section.details && Array.isArray(section.details) ? `
+                <ul class="detail-list">
+                  ${section.details.map((detail: string) => `<li>${detail}</li>`).join('')}
+                </ul>
+              ` : ''}
+            </div>
+          `).join('')}
+        </body>
+      </html>
+    `;
   };
 
   const updateTask = (id: string, field: keyof TaskRow, value: string) => {
@@ -427,6 +539,56 @@ export function BusinessPlanPage({ idea, onComplete, planData }: BusinessPlanPag
           </CardContent>
         </Card>
       )}
+
+      {/* Template View Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">{viewingTemplate?.name}</DialogTitle>
+            <p className="text-gray-600 mt-2">{viewingTemplate?.description}</p>
+          </DialogHeader>
+          
+          <div className="mt-6 space-y-6">
+            {(() => {
+              const businessPlan = planData?.final_output?.business_plan || planData?.business_plan;
+              const apiTemplate = businessPlan?.templates;
+              const sections = apiTemplate?.sections || [];
+              
+              return sections.map((section: any, index: number) => (
+                <div key={index} className="border-l-4 border-blue-500 pl-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    {section.title || section.name || section}
+                  </h3>
+                  {section.details && Array.isArray(section.details) && (
+                    <ul className="space-y-2">
+                      {section.details.map((detail: string, detailIndex: number) => (
+                        <li key={detailIndex} className="flex items-start gap-2 text-gray-700">
+                          <span className="text-green-600 mt-1">✓</span>
+                          <span>{detail}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ));
+            })()}
+          </div>
+
+          <div className="mt-6 flex justify-end gap-3 pt-4 border-t">
+            <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
+              Close
+            </Button>
+            <Button variant="outline" onClick={() => viewingTemplate && handleDownload(viewingTemplate)}>
+              <Download className="w-4 h-4 mr-2" />
+              Download
+            </Button>
+            <Button variant="outline" onClick={() => viewingTemplate && handlePrint(viewingTemplate)}>
+              <Printer className="w-4 h-4 mr-2" />
+              Print
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

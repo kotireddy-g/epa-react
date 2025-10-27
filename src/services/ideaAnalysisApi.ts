@@ -19,8 +19,7 @@ export interface UserProfile {
   country: string;
 }
 
-export interface IdeaDetails {
-  idea_title: string;
+export interface ScaleDetails {
   category: string;
   industry: string;
   domain: string;
@@ -30,6 +29,13 @@ export interface IdeaDetails {
   scalability: string;
   validation: string;
   metrics: string;
+}
+
+export interface IdeaDetails {
+  idea_title: string;
+  large_scale: ScaleDetails;
+  medium_scale: ScaleDetails;
+  small_scale: ScaleDetails;
 }
 
 export interface AnalysePayload {
@@ -82,9 +88,11 @@ export interface References {
 }
 
 export interface Verdict {
-  text: string;
-  sub_text: string;
-  tip: string;
+  label?: string;
+  text?: string;
+  rationale?: string;
+  sub_text?: string;
+  tip?: string;
 }
 
 // Fully dynamic FinalOutput - can handle any fields from API
@@ -421,31 +429,135 @@ class IdeaAnalysisApiService {
    */
   createAnalysePayload(
     ideaTitle: string,
-    ideaDetails: Partial<IdeaDetails>,
+    category: string,
+    industry: string,
     ideaId: string = ''
   ): AnalysePayload {
     const userProfile = this.getUserProfileFromSession();
+
+    // Create empty scale details with category and industry
+    const emptyScaleDetails: ScaleDetails = {
+      category,
+      industry,
+      domain: '',
+      budget: '',
+      timeline: '',
+      location: '',
+      scalability: '',
+      validation: '',
+      metrics: ''
+    };
 
     return {
       idea_id: ideaId,
       user_profile: userProfile,
       idea_details: {
         idea_title: ideaTitle,
-        category: ideaDetails.category || '',
-        industry: ideaDetails.industry || '',
-        domain: ideaDetails.domain || '',
-        budget: ideaDetails.budget || '',
-        timeline: ideaDetails.timeline || '',
-        location: ideaDetails.location || '',
-        scalability: ideaDetails.scalability || '',
-        validation: ideaDetails.validation || '',
-        metrics: ideaDetails.metrics || ''
+        large_scale: { ...emptyScaleDetails },
+        medium_scale: { ...emptyScaleDetails },
+        small_scale: { ...emptyScaleDetails }
       },
       meta: {
         submitted_on: new Date().toISOString(),
         version: '1.0'
       }
     };
+  }
+
+  /**
+   * Create a payload for re-analysis with updated market attributes
+   */
+  createReAnalysePayload(
+    ideaTitle: string,
+    category: string,
+    industry: string,
+    largeScale: Partial<ScaleDetails>,
+    mediumScale: Partial<ScaleDetails>,
+    smallScale: Partial<ScaleDetails>,
+    ideaId: string = ''
+  ): AnalysePayload {
+    const userProfile = this.getUserProfileFromSession();
+
+    const createScaleDetails = (scale: Partial<ScaleDetails>): ScaleDetails => ({
+      category,
+      industry,
+      domain: scale.domain || '',
+      budget: scale.budget || '',
+      timeline: scale.timeline || '',
+      location: scale.location || '',
+      scalability: scale.scalability || '',
+      validation: scale.validation || '',
+      metrics: scale.metrics || ''
+    });
+
+    return {
+      idea_id: ideaId,
+      user_profile: userProfile,
+      idea_details: {
+        idea_title: ideaTitle,
+        large_scale: createScaleDetails(largeScale),
+        medium_scale: createScaleDetails(mediumScale),
+        small_scale: createScaleDetails(smallScale)
+      },
+      meta: {
+        submitted_on: new Date().toISOString(),
+        version: '1.0'
+      }
+    };
+  }
+
+  /**
+   * Submit feedback or notes for an idea
+   */
+  async submitFeedbackOrNotes(
+    ideaId: string,
+    messageType: 'Feedback' | 'Notes',
+    description: string
+  ): Promise<any> {
+    const accessToken = authApi.getAccessToken();
+    if (!accessToken) {
+      throw new Error('Authentication required');
+    }
+
+    // Get user ID from session
+    const user = authApi.getStoredUser();
+    if (!user || !user.id) {
+      throw new Error('User not found');
+    }
+
+    const payload = {
+      user: user.id,
+      idea: ideaId,
+      message_type: messageType,
+      description
+    };
+
+    console.log('[IdeaAnalysisAPI] Submitting feedback/notes:', payload);
+
+    try {
+      const response = await authApi.fetchWithAuth(
+        `${API_BASE_URL}/ideabusinessplan/businessidea-feedback-notes-messages/`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `API returned ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('[IdeaAnalysisAPI] Feedback/notes submitted successfully');
+      return data;
+    } catch (error) {
+      console.error('[IdeaAnalysisAPI] Error submitting feedback/notes:', error);
+      throw error;
+    }
   }
 
   /**

@@ -11,6 +11,18 @@ interface DetailedAnalysisViewProps {
   data: FinalOutput;
 }
 
+// Colors for budget bifurcation pie chart
+const BUDGET_COLORS = [
+  '#10b981', // green
+  '#3b82f6', // blue
+  '#f59e0b', // amber
+  '#8b5cf6', // purple
+  '#ef4444', // red
+  '#06b6d4', // cyan
+  '#ec4899', // pink
+  '#84cc16', // lime
+];
+
 export function DetailedAnalysisView({ data }: DetailedAnalysisViewProps) {
   const { 
     key_points_summary, 
@@ -22,6 +34,8 @@ export function DetailedAnalysisView({ data }: DetailedAnalysisViewProps) {
     gtm_customer_strategy_table,
     competitor_gap_table,
     market_product_fit_table,
+    budget_bifurcation_percent,
+    real_time_stats,
     verdict
   } = data;
 
@@ -485,18 +499,136 @@ export function DetailedAnalysisView({ data }: DetailedAnalysisViewProps) {
         </Card>
       )}
 
+      {/* Budget Bifurcation Chart */}
+      {budget_bifurcation_percent && Object.keys(budget_bifurcation_percent).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <DollarSign className="w-5 h-5 text-green-600" />
+              <span>Budget Bifurcation</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Pie Chart */}
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={Object.entries(budget_bifurcation_percent).map(([key, value]) => ({
+                        name: key.replace(/_percent$/, '').replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+                        value: Number(value) || 0,
+                        percentage: Number(value) || 0
+                      }))}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percentage }) => `${name}: ${percentage}%`}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {Object.keys(budget_bifurcation_percent).map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={BUDGET_COLORS[index % BUDGET_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: any) => `${value}%`} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Budget Breakdown List */}
+              <div className="space-y-3">
+                <h4 className="font-semibold text-gray-900 mb-4">Budget Allocation</h4>
+                {Object.entries(budget_bifurcation_percent).map(([key, value], index) => {
+                  const label = key.replace(/_percent$/, '').replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                  return (
+                    <div key={key} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div 
+                          className="w-4 h-4 rounded" 
+                          style={{ backgroundColor: BUDGET_COLORS[index % BUDGET_COLORS.length] }}
+                        />
+                        <span className="text-sm font-medium text-gray-700">{label}</span>
+                      </div>
+                      <span className="text-sm font-bold text-gray-900">{String(value)}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Real-time Stats */}
+      {real_time_stats && real_time_stats.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <TrendingUp className="w-5 h-5 text-orange-600" />
+              <span>Real-time Market Statistics</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {real_time_stats.map((stat: any, index: number) => (
+                <div key={index} className="p-4 bg-gradient-to-br from-orange-50 to-yellow-50 rounded-lg border border-orange-200">
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="text-sm font-semibold text-gray-900">{stat.stat_name}</h4>
+                    <TrendingUp className="w-4 h-4 text-orange-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-orange-700 mb-1">
+                    {typeof stat.value === 'number' && stat.value > 1000000 
+                      ? `₹${(stat.value / 10000000).toFixed(2)} Cr`
+                      : stat.value
+                    }
+                    {stat.unit === 'percent' && '%'}
+                  </p>
+                  {stat.source_domain && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      Source: {stat.source_domain}
+                    </p>
+                  )}
+                  {stat.observed_on && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      As of: {new Date(stat.observed_on).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* References moved to right sidebar */}
 
-      {/* Verdict */}
+      {/* Verdict - Dynamic rendering */}
       {verdict && (
         <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-purple-50">
           <CardContent className="pt-6">
             <div className="space-y-3">
-              <h3 className="text-xl font-bold text-blue-900">{verdict.text}</h3>
-              <p className="text-gray-700">{verdict.sub_text}</p>
-              <div className="bg-white rounded-lg p-4 border-l-4 border-blue-500">
-                <p className="text-sm font-medium text-blue-900">💡 Pro Tip: {verdict.tip}</p>
-              </div>
+              {verdict.label && (
+                <Badge className="mb-2 bg-blue-600 text-white">
+                  {verdict.label}
+                </Badge>
+              )}
+              {verdict.text && (
+                <h3 className="text-xl font-bold text-blue-900">{verdict.text}</h3>
+              )}
+              {verdict.rationale && (
+                <p className="text-gray-700">{verdict.rationale}</p>
+              )}
+              {verdict.sub_text && (
+                <p className="text-gray-700">{verdict.sub_text}</p>
+              )}
+              {verdict.tip && (
+                <div className="bg-white rounded-lg p-4 border-l-4 border-blue-500 mt-4">
+                  <p className="text-sm font-medium text-blue-900">💡 Pro Tip: {verdict.tip}</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

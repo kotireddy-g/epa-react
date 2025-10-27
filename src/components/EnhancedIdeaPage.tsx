@@ -12,6 +12,7 @@ import { MarketAnalysisDialog } from './MarketAnalysisDialog';
 import { IdeaConfirmationDialog } from './IdeaConfirmationDialog';
 import { AnalyzingDialog } from './AnalyzingDialog';
 import { DetailedAnalysisView } from './DetailedAnalysisView';
+import { IndustryCategoryDialog } from './IndustryCategoryDialog';
 import { ideaAnalysisApi, type AnalyseResponse, type UserIdeaItem } from '../services/ideaAnalysisApi';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -82,6 +83,7 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
   const [userIdeas, setUserIdeas] = useState<UserIdeaItem[]>([]);
   const [isLoadingIdeas, setIsLoadingIdeas] = useState(true);
   const [ideasError, setIdeasError] = useState('');
+  const [showIndustryCategoryDialog, setShowIndustryCategoryDialog] = useState(false);
   
   const [summaryKeywords, setSummaryKeywords] = useState<IdeaKeywords>({
     location: '',
@@ -245,30 +247,76 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
     setDetailedKeywords(prev => ({ ...prev, ...extracted }));
   };
 
-  const handleApplyRecommendations = (updatedKeywords: { [key: string]: string }) => {
+  const handleApplyRecommendations = async (updatedKeywords: { [key: string]: string }) => {
     console.log('[EnhancedIdeaPage] Apply Recommendations - Updated keywords:', updatedKeywords);
     console.log('[EnhancedIdeaPage] Apply Recommendations - Reusing idea_id:', ideaId);
     
-    // Update summary keywords with recommendations
-    setSummaryKeywords(prev => {
-      const updated = { ...prev, ...updatedKeywords };
-      console.log('[EnhancedIdeaPage] Updated summaryKeywords:', updated);
-      return updated;
-    });
+    if (!ideaId) {
+      alert('No idea ID found. Please submit the idea first.');
+      return;
+    }
+
+    setIsAnalyzing(true);
     
-    // Update the summary text to include the new keyword information
-    let updatedSummary = summary;
-    Object.entries(updatedKeywords).forEach(([key, value]) => {
-      if (value && !summary.toLowerCase().includes(value.toLowerCase())) {
-        updatedSummary += ` ${key}: ${value}.`;
+    try {
+      // Get category and industry from API response or use stored values
+      const category = apiResponse?.final_output?.market_attributes?.category || summaryKeywords.category || 'General';
+      const industry = apiResponse?.final_output?.market_attributes?.industry || summaryKeywords.industry || 'General';
+
+      // Create scale details from updated keywords
+      const scaleDetails = {
+        domain: updatedKeywords.domain || '',
+        budget: updatedKeywords.budget || '',
+        timeline: updatedKeywords.timeline || '',
+        location: updatedKeywords.location || '',
+        scalability: updatedKeywords.scalability || '',
+        validation: updatedKeywords.validation || '',
+        metrics: updatedKeywords.metrics || ''
+      };
+
+      // Create payload with all three scales having the same updated data
+      const payload = ideaAnalysisApi.createReAnalysePayload(
+        summary,
+        category,
+        industry,
+        scaleDetails, // large_scale
+        scaleDetails, // medium_scale
+        scaleDetails, // small_scale
+        ideaId
+      );
+
+      console.log('[EnhancedIdeaPage] Re-analysis payload:', payload);
+
+      // Call the API
+      const response = await ideaAnalysisApi.analyseIdea(payload);
+      
+      setApiResponse(response);
+      onApiResponse?.(response);
+
+      // Update keywords from response
+      const attrs = response.final_output?.market_attributes;
+      if (attrs) {
+        setSummaryKeywords({
+          location: String(attrs.location || ''),
+          budget: String(attrs.budget || ''),
+          category: String(attrs.category || ''),
+          industry: String(attrs.industry || ''),
+          domain: String(attrs.domain || ''),
+          timeline: String(attrs.timeline || ''),
+          target: String(attrs.target || ''),
+          scalability: String(attrs.scalability || ''),
+          validation: String(attrs.validation || ''),
+          metrics: String(attrs.metrics || '')
+        });
       }
-    });
-    setSummary(updatedSummary);
-    
-    // Re-trigger analysis with updated data (will use the same ideaId)
-    setTimeout(() => {
-      handleSummarySubmit();
-    }, 100);
+
+      console.log('[EnhancedIdeaPage] Re-analysis completed successfully');
+    } catch (error) {
+      console.error('[EnhancedIdeaPage] Re-analysis failed:', error);
+      alert('Failed to re-analyze idea. Please try again.');
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleStartCreate = () => {
@@ -285,6 +333,11 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
       return;
     }
 
+    // Show industry/category dialog first
+    setShowIndustryCategoryDialog(true);
+  };
+
+  const handleIndustryCategorySubmit = async (industry: string, category: string) => {
     setIsAnalyzing(true);
     setSummarySubmitted(true);
     
@@ -296,20 +349,11 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
         console.log('[EnhancedIdeaPage] Generated new idea_id:', currentIdeaId);
       }
 
-      // Create payload using the API service with all keyword fields
+      // Create payload using the API service with industry and category
       const payload = ideaAnalysisApi.createAnalysePayload(
         summary,
-        {
-          category: summaryKeywords.category,
-          industry: summaryKeywords.industry,
-          domain: summaryKeywords.domain,
-          budget: summaryKeywords.budget,
-          timeline: summaryKeywords.timeline,
-          location: summaryKeywords.location,
-          scalability: summaryKeywords.scalability,
-          validation: summaryKeywords.validation,
-          metrics: summaryKeywords.metrics
-        },
+        category,
+        industry,
         currentIdeaId
       );
 
@@ -322,8 +366,24 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
       // Pass response to parent for suggestions panel
       onApiResponse?.(response);
 
-      // Calculate confidence based on market_attributes field completion
+      // Auto-fill keywords from API response
       const attrs = response.final_output?.market_attributes;
+      if (attrs) {
+        setSummaryKeywords({
+          location: String(attrs.location || ''),
+          budget: String(attrs.budget || ''),
+          category: String(attrs.category || category),
+          industry: String(attrs.industry || industry),
+          domain: String(attrs.domain || ''),
+          timeline: String(attrs.timeline || ''),
+          target: String(attrs.target || ''),
+          scalability: String(attrs.scalability || ''),
+          validation: String(attrs.validation || ''),
+          metrics: String(attrs.metrics || '')
+        });
+      }
+
+      // Calculate confidence based on market_attributes field completion
       const marketAttrFields = ['category', 'domain', 'industry', 'budget', 'location', 'timeline', 'scalability', 'validation', 'metrics'];
       const filledFields = marketAttrFields.filter(field => attrs?.[field as keyof typeof attrs] && String(attrs[field as keyof typeof attrs]).trim().length > 0);
       const confidenceScore = Math.round((filledFields.length / marketAttrFields.length) * 100);
@@ -590,6 +650,13 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
           isOpen={showJourneyDialog}
           onClose={() => setShowJourneyDialog(false)}
           onContinue={handleContinueToForm}
+        />
+
+        {/* Industry & Category Selection Dialog */}
+        <IndustryCategoryDialog
+          isOpen={showIndustryCategoryDialog}
+          onClose={() => setShowIndustryCategoryDialog(false)}
+          onSubmit={handleIndustryCategorySubmit}
         />
 
         {/* Analyzing Dialog - Shows during API call */}
