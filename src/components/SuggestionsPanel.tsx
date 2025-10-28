@@ -13,7 +13,7 @@ interface SuggestionsPanelProps {
   planResponse?: PlanResponse | null;
 }
 
-export function SuggestionsPanel({ currentPage, currentIdea, isProfileSetup = false, apiResponse, validationResponse, planResponse }: SuggestionsPanelProps) {
+export function SuggestionsPanel({ currentPage, currentIdea, isProfileSetup = false, apiResponse, validationResponse: _validationResponse, planResponse }: SuggestionsPanelProps) {
   const getSuggestions = () => {
     if (isProfileSetup) {
       return {
@@ -139,71 +139,9 @@ export function SuggestionsPanel({ currentPage, currentIdea, isProfileSetup = fa
     }
   };
   
-  // Get validation references if available for 'validation' page
-  const getValidationReferences = () => {
-    if (currentPage !== 'validation' || !validationResponse?.final_output?.references) {
-      return [];
-    }
-    
-    const refs = validationResponse.final_output.references;
-    const allRefs: Array<{ type: string, title: string, source: string, url: string }> = [];
-    
-    // Combine all reference types
-    if (refs.videos) {
-      refs.videos.forEach(ref => allRefs.push({ 
-        type: 'video', 
-        title: ref.title || 'Video Resource', 
-        source: ref.reason || 'Video', 
-        url: ref.url 
-      }));
-    }
-    if (refs.articles) {
-      refs.articles.forEach(ref => allRefs.push({ 
-        type: 'article', 
-        title: ref.title || 'Article', 
-        source: ref.reason || 'Article', 
-        url: ref.url 
-      }));
-    }
-    if (refs.case_studies) {
-      refs.case_studies.forEach(ref => allRefs.push({ 
-        type: 'case_study', 
-        title: ref.title || 'Case Study', 
-        source: ref.reason || 'Case Study', 
-        url: ref.url 
-      }));
-    }
-    if (refs.vendors) {
-      refs.vendors.forEach(ref => allRefs.push({ 
-        type: 'vendor', 
-        title: ref.title || 'Vendor', 
-        source: ref.reason || 'Vendor', 
-        url: ref.url 
-      }));
-    }
-    if (refs.success_stories) {
-      refs.success_stories.forEach(ref => allRefs.push({ 
-        type: 'success_story', 
-        title: ref.title || 'Success Story', 
-        source: ref.reason || 'Success Story', 
-        url: ref.url 
-      }));
-    }
-    if (refs.failure_stories) {
-      refs.failure_stories.forEach(ref => allRefs.push({ 
-        type: 'failure_story', 
-        title: ref.title || 'Failure Story', 
-        source: ref.reason || 'Lesson Learned', 
-        url: ref.url 
-      }));
-    }
-    
-    return allRefs.slice(0, 10); // Limit to 10 items
-  };
-
-  // Get API references if available for 'idea' page
+  // Get API references if available for 'idea' and 'validation' pages
   const getApiReferences = () => {
-    if (currentPage !== 'idea' || !apiResponse) {
+    if ((currentPage !== 'idea' && currentPage !== 'validation') || !apiResponse) {
       return [];
     }
     
@@ -400,13 +338,15 @@ export function SuggestionsPanel({ currentPage, currentIdea, isProfileSetup = fa
   };
 
   const apiReferences = getApiReferences();
-  const validationReferences = getValidationReferences();
   const planReferences = getPlanReferences();
   
-  // Determine which references to show (priority: plan > validation > api)
+  // Determine which references to show
+  // For validation page: use API references (same as Idea page)
+  // For plan pages: use plan references
+  // For idea page: use API references
   const displayReferences = planReferences.length > 0 
     ? planReferences 
-    : (validationReferences.length > 0 ? validationReferences : apiReferences);
+    : apiReferences;
 
   return (
     <aside className="w-80 bg-white border-l border-gray-200">

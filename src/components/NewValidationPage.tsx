@@ -437,12 +437,12 @@ export function NewValidationPage({
               <div className={`text-sm font-bold ${getInterpretation(personaConfidence).color}`}>{personaConfidence}%</div>
             </div>
             <div className="text-center p-2 bg-white rounded">
-              <div className="text-xs text-gray-600">Financial</div>
-              <div className={`text-sm font-bold ${getInterpretation(financialConfidence).color}`}>{financialConfidence}%</div>
-            </div>
-            <div className="text-center p-2 bg-white rounded">
               <div className="text-xs text-gray-600">Network</div>
               <div className={`text-sm font-bold ${getInterpretation(networkConfidence).color}`}>{networkConfidence}%</div>
+            </div>
+            <div className="text-center p-2 bg-white rounded">
+              <div className="text-xs text-gray-600">Financial</div>
+              <div className={`text-sm font-bold ${getInterpretation(financialConfidence).color}`}>{financialConfidence}%</div>
             </div>
           </div>
         </CardContent>

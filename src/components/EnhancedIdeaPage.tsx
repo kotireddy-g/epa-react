@@ -333,8 +333,19 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
       return;
     }
 
-    // Show industry/category dialog first
-    setShowIndustryCategoryDialog(true);
+    // Try to extract industry and category from existing keywords
+    const existingIndustry = summaryKeywords.industry?.trim();
+    const existingCategory = summaryKeywords.category?.trim();
+
+    // If both industry and category are already filled, proceed directly
+    if (existingIndustry && existingCategory) {
+      console.log('[EnhancedIdeaPage] Industry and Category already extracted, proceeding directly');
+      await handleIndustryCategorySubmit(existingIndustry, existingCategory);
+    } else {
+      // Show industry/category dialog to collect missing information
+      console.log('[EnhancedIdeaPage] Industry or Category missing, showing dialog');
+      setShowIndustryCategoryDialog(true);
+    }
   };
 
   const handleIndustryCategorySubmit = async (industry: string, category: string) => {

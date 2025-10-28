@@ -11,66 +11,251 @@ interface IndustryCategoryDialogProps {
   onSubmit: (industry: string, category: string) => void;
 }
 
-const INDUSTRIES = [
-  'Technology',
-  'Healthcare',
-  'Finance',
-  'Education',
-  'Retail',
-  'Manufacturing',
-  'Hospitality',
-  'Real Estate',
-  'Transportation',
-  'Agriculture',
-  'Energy',
-  'Media & Entertainment',
-  'Telecommunications',
-  'Construction',
-  'Automotive',
-  'Fashion & Retail',
-  'Food & Beverage',
-  'Consulting',
-  'Legal Services',
-  'Marketing & Advertising',
-  'Others'
+// Industry-Category mapping with subcategories
+const INDUSTRY_DATA = [
+  {
+    "Industry": "Food & Beverages",
+    "Domain": "Food Business",
+    "Subcategories": [
+      "Juice shops",
+      "Panipuri stalls",
+      "Restaurants",
+      "Cafes",
+      "Bakeries",
+      "Food Trucks",
+      "Catering services",
+      "Ice Cream Parlors",
+      "Fast Food outlets",
+      "Organic Stores",
+      "Sweet shops",
+      "Online Food Delivery",
+      "Food Aggregators"
+    ]
+  },
+  {
+    "Industry": "Agriculture",
+    "Domain": "Farming & Distribution",
+    "Subcategories": [
+      "Crop Farming",
+      "Dairy",
+      "Poultry",
+      "Fisheries",
+      "Seed Suppliers",
+      "Fertilizer Dealers",
+      "Farm Equipment"
+    ]
+  },
+  {
+    "Industry": "Manufacturing",
+    "Domain": "Processed Goods",
+    "Subcategories": [
+      "Furniture",
+      "Apparel",
+      "Shoes",
+      "Chemicals",
+      "Paper",
+      "Metals",
+      "Plastics",
+      "Electronics",
+      "Machinery",
+      "Home Appliances"
+    ]
+  },
+  {
+    "Industry": "Health Care",
+    "Domain": "Medical Services",
+    "Subcategories": [
+      "Hospitals",
+      "Clinics",
+      "Pharmacies",
+      "Diagnostic Labs",
+      "Nursing Homes",
+      "Ambulance Service",
+      "Wellness Centers",
+      "Telemedicine",
+      "Rehabilitation"
+    ]
+  },
+  {
+    "Industry": "Information Technology",
+    "Domain": "Software & Services",
+    "Subcategories": [
+      "Application Development",
+      "SaaS",
+      "IT Consulting",
+      "Web Design",
+      "Cybersecurity",
+      "E-commerce Platforms",
+      "AI & Machine Learning Solutions",
+      "Managed IT"
+    ]
+  },
+  {
+    "Industry": "Financial Services",
+    "Domain": "Banking",
+    "Subcategories": [
+      "Retail Banking",
+      "Investment Banking",
+      "Cooperative Banks",
+      "Microfinance",
+      "Wealth Management",
+      "Payment Gateways",
+      "Insurance Brokers",
+      "NBFCs"
+    ]
+  },
+  {
+    "Industry": "Education",
+    "Domain": "Learning Solutions",
+    "Subcategories": [
+      "Schools",
+      "Colleges",
+      "EdTech Platforms",
+      "Coaching Centers",
+      "Skill Training",
+      "Vocational Courses",
+      "Language Schools",
+      "Tutoring"
+    ]
+  },
+  {
+    "Industry": "Construction & Real Estate",
+    "Domain": "Built Environment",
+    "Subcategories": [
+      "Residential Builders",
+      "Commercial Developers",
+      "Interior Designers",
+      "Real Estate Brokers",
+      "Property Management",
+      "Construction Contractors"
+    ]
+  },
+  {
+    "Industry": "Transportation",
+    "Domain": "Mobility Solutions",
+    "Subcategories": [
+      "Taxi Services",
+      "Logistics",
+      "Courier",
+      "Trucking",
+      "Freight",
+      "Public Transport",
+      "Bike Rentals",
+      "Shipping",
+      "Warehousing"
+    ]
+  },
+  {
+    "Industry": "Utilities",
+    "Domain": "Infrastructure",
+    "Subcategories": [
+      "Electricity Providers",
+      "Water Suppliers",
+      "Renewable Energy Firms",
+      "Gas Distribution",
+      "Waste Management",
+      "Recycling Plants"
+    ]
+  },
+  {
+    "Industry": "Retail",
+    "Domain": "Commerce",
+    "Subcategories": [
+      "Supermarkets",
+      "Department Stores",
+      "Online Marketplaces",
+      "Convenience Stores",
+      "Boutique Shops",
+      "Malls",
+      "Wholesalers",
+      "Hypermarts"
+    ]
+  },
+  {
+    "Industry": "Hospitality & Tourism",
+    "Domain": "Travel & Leisure",
+    "Subcategories": [
+      "Hotels",
+      "Resorts",
+      "Travel Agencies",
+      "Tour Operators",
+      "Homestays",
+      "Car Rentals",
+      "Cruise Lines",
+      "Event Management",
+      "Theme Parks"
+    ]
+  },
+  {
+    "Industry": "Communication Services",
+    "Domain": "Media",
+    "Subcategories": [
+      "TV Channels",
+      "Radio Stations",
+      "Digital Content Creators",
+      "Social Media Firms",
+      "Newspapers",
+      "PR Agencies",
+      "Advertising",
+      "Music Production"
+    ]
+  },
+  {
+    "Industry": "Pharmaceuticals",
+    "Domain": "Drug & Biotech",
+    "Subcategories": [
+      "Medicine Manufacturers",
+      "Pharma Distributors",
+      "Biotechnology Firms",
+      "Research Labs",
+      "Vaccine Development",
+      "Generic Medicine"
+    ]
+  },
+  {
+    "Industry": "Consumer Goods",
+    "Domain": "FMCG",
+    "Subcategories": [
+      "Packaged Foods",
+      "Detergents",
+      "Personal Care",
+      "Cosmetics",
+      "Stationery",
+      "Beverages",
+      "Snacks",
+      "Tobacco"
+    ]
+  },
+  {
+    "Industry": "Automotive",
+    "Domain": "Vehicle Expertise",
+    "Subcategories": [
+      "Car Dealerships",
+      "Auto Service Centers",
+      "Spare Parts",
+      "Manufacturing",
+      "Bike Assemblers",
+      "EV Charging Stations",
+      "Ride-sharing Companies"
+    ]
+  },
+  {
+    "Industry": "Entertainment",
+    "Domain": "Cultural Activities",
+    "Subcategories": [
+      "Cinema Halls",
+      "Event Producers",
+      "Artists",
+      "Performers",
+      "Gaming Zones",
+      "Amusement Centers",
+      "Film Studios",
+      "Streaming Services"
+    ]
+  }
 ];
 
-const CATEGORIES = [
-  'SaaS',
-  'E-commerce',
-  'Fintech',
-  'Edtech',
-  'Healthtech',
-  'Foodtech',
-  'Agritech',
-  'Proptech',
-  'Logistics',
-  'B2B Services',
-  'B2C Services',
-  'Marketplace',
-  'Social Media',
-  'Gaming',
-  'AI/ML',
-  'Blockchain',
-  'IoT',
-  'Cybersecurity',
-  'Cloud Services',
-  'Mobile Apps',
-  'Web Development',
-  'Consulting',
-  'Manufacturing',
-  'Retail',
-  'Restaurant',
-  'Hotel',
-  'Travel',
-  'Fashion',
-  'Beauty & Wellness',
-  'Sports & Fitness',
-  'Entertainment',
-  'Sustainable Fashion',
-  'Quick Service Restaurant',
-  'Others'
-];
+const INDUSTRIES = [...INDUSTRY_DATA.map(item => item.Industry), 'Others'];
 
 export function IndustryCategoryDialog({ isOpen, onClose, onSubmit }: IndustryCategoryDialogProps) {
   const [industry, setIndustry] = useState('');
@@ -80,8 +265,18 @@ export function IndustryCategoryDialog({ isOpen, onClose, onSubmit }: IndustryCa
   const [showCustomIndustry, setShowCustomIndustry] = useState(false);
   const [showCustomCategory, setShowCustomCategory] = useState(false);
 
+  // Get categories based on selected industry
+  const getCategories = () => {
+    if (!industry || industry === 'Others') {
+      return ['Others'];
+    }
+    const selectedIndustry = INDUSTRY_DATA.find(item => item.Industry === industry);
+    return selectedIndustry ? [...selectedIndustry.Subcategories, 'Others'] : ['Others'];
+  };
+
   const handleIndustryChange = (value: string) => {
     setIndustry(value);
+    setCategory(''); // Reset category when industry changes
     if (value === 'Others') {
       setShowCustomIndustry(true);
     } else {
@@ -152,12 +347,16 @@ export function IndustryCategoryDialog({ isOpen, onClose, onSubmit }: IndustryCa
           {/* Category Selection */}
           <div className="space-y-2">
             <Label htmlFor="category">Category *</Label>
-            <Select value={category} onValueChange={handleCategoryChange}>
+            <Select 
+              value={category} 
+              onValueChange={handleCategoryChange}
+              disabled={!industry}
+            >
               <SelectTrigger id="category">
-                <SelectValue placeholder="Select category" />
+                <SelectValue placeholder={industry ? "Select category" : "Select industry first"} />
               </SelectTrigger>
               <SelectContent className="max-h-[300px]">
-                {CATEGORIES.map((cat) => (
+                {getCategories().map((cat: string) => (
                   <SelectItem key={cat} value={cat}>
                     {cat}
                   </SelectItem>
