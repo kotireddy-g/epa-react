@@ -84,7 +84,7 @@ export function MarketAnalysisDialog({ isOpen, onClose, category, matchType, ide
   const analysis = getMarketAnalysis();
   const Icon = analysis.icon;
 
-  // Compare idea keywords with market standards
+  // Compare idea keywords with market standards (OLD format)
   const compareKeywords = () => {
     const comparisons = [];
     
@@ -99,7 +99,9 @@ export function MarketAnalysisDialog({ isOpen, onClose, category, matchType, ide
         marketStandard: marketValue,
         status: hasMatch ? 
           (matchType === 'large' ? 'match' : matchType === 'medium' ? 'partial' : 'mismatch') :
-          'missing'
+          'missing',
+        recommendation: '',
+        color: 'gray'
       });
     }
     
@@ -270,14 +272,15 @@ export function MarketAnalysisDialog({ isOpen, onClose, category, matchType, ide
                       </div>
                     </div>
 
-                    {/* AI Recommendation */}
-                    {comparison.status !== 'match' && (
+                    {/* AI Recommendation - Dynamic from API or fallback */}
+                    {(comparison.recommendation || comparison.status !== 'match') && (
                       <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
                         <p className="text-xs text-gray-600 mb-1">💡 AI Recommendation:</p>
                         <p className="text-sm text-gray-800">
-                          {comparison.status === 'missing' ? 
+                          {comparison.recommendation || 
+                           (comparison.status === 'missing' ? 
                             `Add ${comparison.aspect.toLowerCase()} information to strengthen your idea. ${comparison.marketStandard}` :
-                            `Consider aligning your ${comparison.aspect.toLowerCase()} with market standards: ${comparison.marketStandard}`
+                            `Consider aligning your ${comparison.aspect.toLowerCase()} with market standards: ${comparison.marketStandard}`)
                           }
                         </p>
                       </div>

@@ -38,10 +38,47 @@ export interface IdeaDetails {
   small_scale: ScaleDetails;
 }
 
+export interface ClarifyPayload {
+  idea_id: string;
+  idea: {
+    title: string;
+    description: string;
+    industry: string;
+    target_location: string;
+    business_model: string;
+  };
+}
+
+export interface FollowUpQuestion {
+  id: string;
+  label: string;
+  type: 'multiple_choice' | 'long_text' | 'short_text';
+  required: boolean;
+  options?: string[];
+  placeholder?: string;
+  help?: string;
+  validation?: {
+    min_len?: number;
+    max_len?: number;
+  };
+}
+
+export interface ClarifyResponse {
+  questions: FollowUpQuestion[];
+  model?: string;
+}
+
+export interface ClarifiedFollowUp {
+  question_id: string;
+  question: string;
+  answer: string;
+}
+
 export interface AnalysePayload {
   idea_id: string;
   user_profile: UserProfile;
   idea_details: IdeaDetails;
+  clarified_followups?: ClarifiedFollowUp[];
   meta: {
     submitted_on: string;
     version: string;
@@ -431,7 +468,8 @@ class IdeaAnalysisApiService {
     ideaTitle: string,
     category: string,
     industry: string,
-    ideaId: string = ''
+    ideaId: string = '',
+    clarifiedFollowups?: ClarifiedFollowUp[]
   ): AnalysePayload {
     const userProfile = this.getUserProfileFromSession();
 
@@ -448,7 +486,7 @@ class IdeaAnalysisApiService {
       metrics: ''
     };
 
-    return {
+    const payload: AnalysePayload = {
       idea_id: ideaId,
       user_profile: userProfile,
       idea_details: {
@@ -462,6 +500,13 @@ class IdeaAnalysisApiService {
         version: '1.0'
       }
     };
+
+    // Add clarified_followups if provided
+    if (clarifiedFollowups && clarifiedFollowups.length > 0) {
+      payload.clarified_followups = clarifiedFollowups;
+    }
+
+    return payload;
   }
 
   /**
@@ -600,6 +645,48 @@ class IdeaAnalysisApiService {
       return data;
     } catch (error) {
       console.error('[IdeaAnalysisAPI] Error submitting plan:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Call clarify API to get follow-up questions
+   */
+  async clarifyIdea(payload: ClarifyPayload): Promise<ClarifyResponse> {
+    const accessToken = authApi.getAccessToken();
+    
+    if (!accessToken) {
+      console.error('[IdeaAnalysisAPI] No access token available');
+      throw new Error('Authentication required. Please login.');
+    }
+
+    console.log('[IdeaAnalysisAPI] Calling clarify API with payload:', payload);
+
+    try {
+      const response = await authApi.fetchWithAuth(`${API_BASE_URL}/api/idea/clarify/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.error('[IdeaAnalysisAPI] Unauthorized (401)');
+          throw new Error('Unauthorized: Please re-authenticate and try again.');
+        }
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[IdeaAnalysisAPI] API error:', response.status, errorData);
+        throw new Error(errorData.message || `API returned ${response.status}`);
+      }
+
+      const data: ClarifyResponse = await response.json();
+      console.log('[IdeaAnalysisAPI] Clarify response received:', data);
+
+      return data;
+    } catch (error) {
+      console.error('[IdeaAnalysisAPI] Error calling clarify API:', error);
       throw error;
     }
   }

@@ -9,6 +9,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Ba
 
 interface DetailedAnalysisViewProps {
   data: FinalOutput;
+  additionalInfo?: any; // Additional information from API (dynamic structure)
 }
 
 // Colors for budget bifurcation pie chart
@@ -23,7 +24,7 @@ const BUDGET_COLORS = [
   '#84cc16', // lime
 ];
 
-export function DetailedAnalysisView({ data }: DetailedAnalysisViewProps) {
+export function DetailedAnalysisView({ data, additionalInfo }: DetailedAnalysisViewProps) {
   const { 
     key_points_summary, 
     market_attributes,
@@ -38,6 +39,9 @@ export function DetailedAnalysisView({ data }: DetailedAnalysisViewProps) {
     real_time_stats,
     verdict
   } = data;
+  
+  // Extract additional information if available
+  const extraFields = additionalInfo?.extra_fields || {};
 
   return (
     <div className="space-y-6">
@@ -633,6 +637,11 @@ export function DetailedAnalysisView({ data }: DetailedAnalysisViewProps) {
           </CardContent>
         </Card>
       )}
+
+      {/* Additional Information from API - Dynamic rendering */}
+      {extraFields && Object.keys(extraFields).length > 0 && (
+        <AdditionalInformationSection data={extraFields} />
+      )}
     </div>
   );
 }
@@ -693,6 +702,622 @@ function InfoItem({ label, value }: { label: string, value: string }) {
     <div>
       <p className="text-xs text-gray-500">{label}</p>
       <p className="text-sm font-medium text-gray-900">{value}</p>
+    </div>
+  );
+}
+
+// Additional Information Section - Dynamically renders all extra fields from API
+function AdditionalInformationSection({ data }: { data: any }) {
+  if (!data || Object.keys(data).length === 0) return null;
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-gray-900">📊 Detailed Analysis</h2>
+      
+      {/* Executive Summary */}
+      {data.executive_summary && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lightbulb className="w-5 h-5 text-blue-600" />
+              Executive Summary
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {data.executive_summary.idea_title && (
+              <div>
+                <p className="text-sm font-semibold text-gray-700">Idea Title</p>
+                <p className="text-lg font-bold text-gray-900">{data.executive_summary.idea_title}</p>
+              </div>
+            )}
+            {data.executive_summary.one_line_pitch && (
+              <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                <p className="text-gray-900">{data.executive_summary.one_line_pitch}</p>
+              </div>
+            )}
+            {data.executive_summary.viability_score !== undefined && (
+              <div className="flex items-center gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">Viability Score</p>
+                  <p className="text-3xl font-bold text-blue-600">{data.executive_summary.viability_score}%</p>
+                </div>
+                {data.executive_summary.viability_label && (
+                  <Badge className="bg-blue-600 text-white">{data.executive_summary.viability_label}</Badge>
+                )}
+              </div>
+            )}
+            
+            {data.executive_summary.key_strengths && data.executive_summary.key_strengths.length > 0 && (
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-2">✅ Key Strengths</p>
+                <ul className="space-y-2">
+                  {data.executive_summary.key_strengths.map((strength: string, idx: number) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-gray-700">{strength}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {data.executive_summary.key_risks && data.executive_summary.key_risks.length > 0 && (
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-2">⚠️ Key Risks</p>
+                <ul className="space-y-2">
+                  {data.executive_summary.key_risks.map((risk: string, idx: number) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-red-600 mt-0.5">•</span>
+                      <span className="text-sm text-gray-700">{risk}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {data.executive_summary.critical_assumptions && data.executive_summary.critical_assumptions.length > 0 && (
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-2">🎯 Critical Assumptions</p>
+                <ul className="space-y-2">
+                  {data.executive_summary.critical_assumptions.map((assumption: string, idx: number) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-blue-600 mt-0.5">→</span>
+                      <span className="text-sm text-gray-700">{assumption}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Market Analysis */}
+      {data.market_analysis && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-purple-600" />
+              Market Analysis
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Market Size India */}
+            {data.market_analysis.market_size_india && (
+              <div className="p-3 bg-purple-50 rounded-lg">
+                <p className="text-xs text-purple-900 font-semibold">Market Size (India)</p>
+                <p className="text-sm text-gray-900 mt-1">{data.market_analysis.market_size_india}</p>
+              </div>
+            )}
+            
+            {/* Market Size Local */}
+            {data.market_analysis.market_size_local && (
+              <div className="p-3 bg-blue-50 rounded-lg">
+                <p className="text-xs text-blue-900 font-semibold">Local Market Size</p>
+                <p className="text-sm text-gray-900 mt-1">{data.market_analysis.market_size_local}</p>
+              </div>
+            )}
+            
+            {/* Target Segment */}
+            {data.market_analysis.target_segment && (
+              <div className="p-3 bg-green-50 rounded-lg">
+                <p className="text-xs text-green-900 font-semibold">Target Segment</p>
+                <p className="text-sm text-gray-900 mt-1">{data.market_analysis.target_segment}</p>
+              </div>
+            )}
+            
+            {/* Competition Landscape */}
+            {data.market_analysis.competition_landscape && (
+              <div className="p-3 bg-orange-50 rounded-lg">
+                <p className="text-xs text-orange-900 font-semibold">Competition Landscape</p>
+                <p className="text-sm text-gray-900 mt-1">{data.market_analysis.competition_landscape}</p>
+              </div>
+            )}
+            
+            {/* Market Trends */}
+            {data.market_analysis.market_trends && data.market_analysis.market_trends.length > 0 && (
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-2">📈 Market Trends</p>
+                <ul className="space-y-2">
+                  {data.market_analysis.market_trends.map((trend: string, idx: number) => (
+                    <li key={idx} className="flex items-start gap-2 p-2 bg-gray-50 rounded">
+                      <span className="text-purple-600 mt-0.5">→</span>
+                      <span className="text-sm text-gray-700">{trend}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {/* Regulatory Requirements */}
+            {data.market_analysis.regulatory_requirements && data.market_analysis.regulatory_requirements.length > 0 && (
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-2">📋 Regulatory Requirements</p>
+                <ul className="space-y-2">
+                  {data.market_analysis.regulatory_requirements.map((req: string, idx: number) => (
+                    <li key={idx} className="flex items-start gap-2 p-2 bg-yellow-50 rounded border-l-2 border-yellow-400">
+                      <span className="text-yellow-700 mt-0.5">⚠</span>
+                      <span className="text-sm text-gray-700">{req}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {/* Market Gap (old format) */}
+            {data.market_analysis.market_gap && (
+              <div className="p-4 bg-purple-50 rounded-lg">
+                <p className="text-sm font-semibold text-purple-900 mb-1">Market Gap Identified</p>
+                <p className="text-sm text-gray-700">{data.market_analysis.market_gap}</p>
+              </div>
+            )}
+            
+            {/* Target Audience (old format) */}
+            {data.market_analysis.target_audience && (
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-gray-700">Target Audience</p>
+                {data.market_analysis.target_audience.primary_persona && (
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-xs text-gray-600">Primary Persona</p>
+                    <p className="text-sm text-gray-900">{data.market_analysis.target_audience.primary_persona}</p>
+                  </div>
+                )}
+                {data.market_analysis.target_audience.geographic_focus && (
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-xs text-gray-600">Geographic Focus</p>
+                    <p className="text-sm text-gray-900">{data.market_analysis.target_audience.geographic_focus}</p>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* References */}
+            {data.market_analysis.references && (
+              <div className="space-y-3 mt-4">
+                <p className="text-sm font-semibold text-gray-700">📚 References & Resources</p>
+                
+                {/* Videos */}
+                {data.market_analysis.references.videos && data.market_analysis.references.videos.length > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-600 mb-2">🎥 Videos</p>
+                    <div className="space-y-1">
+                      {data.market_analysis.references.videos.map((video: any, idx: number) => (
+                        <a key={idx} href={video.link} target="_blank" rel="noopener noreferrer" 
+                           className="block p-2 bg-gray-50 rounded hover:bg-gray-100 transition">
+                          <p className="text-sm text-blue-600 hover:underline">{video.title}</p>
+                          <p className="text-xs text-gray-500">{video.author}</p>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Articles */}
+                {data.market_analysis.references.articles && data.market_analysis.references.articles.length > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-600 mb-2">📄 Articles</p>
+                    <div className="space-y-1">
+                      {data.market_analysis.references.articles.map((article: any, idx: number) => (
+                        <a key={idx} href={article.link} target="_blank" rel="noopener noreferrer"
+                           className="block p-2 bg-gray-50 rounded hover:bg-gray-100 transition">
+                          <p className="text-sm text-blue-600 hover:underline">{article.title}</p>
+                          <p className="text-xs text-gray-500">{article.author}</p>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Case Studies */}
+                {data.market_analysis.references.case_studies && data.market_analysis.references.case_studies.length > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-600 mb-2">📊 Case Studies</p>
+                    <div className="space-y-1">
+                      {data.market_analysis.references.case_studies.map((study: any, idx: number) => (
+                        <a key={idx} href={study.link} target="_blank" rel="noopener noreferrer"
+                           className="block p-2 bg-gray-50 rounded hover:bg-gray-100 transition">
+                          <p className="text-sm text-blue-600 hover:underline">{study.title}</p>
+                          <p className="text-xs text-gray-500">{study.author}</p>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Success Stories */}
+                {data.market_analysis.references.success_stories && data.market_analysis.references.success_stories.length > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-600 mb-2">✅ Success Stories</p>
+                    <div className="space-y-1">
+                      {data.market_analysis.references.success_stories.map((story: any, idx: number) => (
+                        <a key={idx} href={story.link} target="_blank" rel="noopener noreferrer"
+                           className="block p-2 bg-green-50 rounded hover:bg-green-100 transition">
+                          <p className="text-sm text-green-700 hover:underline">{story.title}</p>
+                          <p className="text-xs text-gray-500">{story.author}</p>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Failure Stories */}
+                {data.market_analysis.references.failure_stories && data.market_analysis.references.failure_stories.length > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-600 mb-2">⚠️ Failure Stories & Lessons</p>
+                    <div className="space-y-1">
+                      {data.market_analysis.references.failure_stories.map((story: any, idx: number) => (
+                        <a key={idx} href={story.link} target="_blank" rel="noopener noreferrer"
+                           className="block p-2 bg-red-50 rounded hover:bg-red-100 transition">
+                          <p className="text-sm text-red-700 hover:underline">{story.title}</p>
+                          <p className="text-xs text-gray-500">{story.author}</p>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Vendors */}
+                {data.market_analysis.references.vendors && data.market_analysis.references.vendors.length > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-600 mb-2">🏪 Vendors & Suppliers</p>
+                    <div className="space-y-1">
+                      {data.market_analysis.references.vendors.map((vendor: any, idx: number) => (
+                        <a key={idx} href={vendor.link} target="_blank" rel="noopener noreferrer"
+                           className="block p-2 bg-gray-50 rounded hover:bg-gray-100 transition">
+                          <p className="text-sm text-blue-600 hover:underline">{vendor.title}</p>
+                          <p className="text-xs text-gray-500">{vendor.author}</p>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Financial Feasibility */}
+      {data.financial_feasibility && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-green-600" />
+              Financial Feasibility
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {data.financial_feasibility.total_initial_investment_inr && (
+              <div className="p-4 bg-green-50 rounded-lg">
+                <p className="text-sm text-gray-600">Total Initial Investment</p>
+                <p className="text-2xl font-bold text-green-700">₹{(data.financial_feasibility.total_initial_investment_inr / 100000).toFixed(1)}L</p>
+              </div>
+            )}
+            
+            {data.financial_feasibility.initial_investment_breakdown && (
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-3">Investment Breakdown</p>
+                <div className="space-y-2">
+                  {data.financial_feasibility.initial_investment_breakdown.map((item: any, idx: number) => (
+                    <div key={idx} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                      <span className="text-sm text-gray-700">{item.category}</span>
+                      <span className="text-sm font-semibold text-gray-900">
+                        ₹{(item.amount_inr / 100000).toFixed(1)}L ({item.percentage}%)
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {data.financial_feasibility.break_even_analysis && (
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <p className="text-sm font-semibold text-blue-900 mb-2">Break-Even Analysis</p>
+                {data.financial_feasibility.break_even_analysis.break_even_month && (
+                  <p className="text-sm text-gray-700">Expected in <strong>{data.financial_feasibility.break_even_analysis.break_even_month} months</strong></p>
+                )}
+                {data.financial_feasibility.break_even_analysis.notes && (
+                  <p className="text-xs text-gray-600 mt-2">{data.financial_feasibility.break_even_analysis.notes}</p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Go-to-Market Strategy */}
+      {data.go_to_market_strategy && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Rocket className="w-5 h-5 text-orange-600" />
+              Go-to-Market Strategy
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {data.go_to_market_strategy.positioning_statement && (
+              <div className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-500">
+                <p className="text-sm font-semibold text-orange-900 mb-1">Positioning Statement</p>
+                <p className="text-sm text-gray-700">{data.go_to_market_strategy.positioning_statement}</p>
+              </div>
+            )}
+            
+            {data.go_to_market_strategy.pricing_strategy && (
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-2">Pricing Strategy</p>
+                {data.go_to_market_strategy.pricing_strategy.price_points && (
+                  <p className="text-sm text-gray-700">{data.go_to_market_strategy.pricing_strategy.price_points}</p>
+                )}
+                {data.go_to_market_strategy.pricing_strategy.rationale && (
+                  <p className="text-xs text-gray-600 mt-1">{data.go_to_market_strategy.pricing_strategy.rationale}</p>
+                )}
+              </div>
+            )}
+            
+            {data.go_to_market_strategy.marketing_tactics && data.go_to_market_strategy.marketing_tactics.length > 0 && (
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-2">Marketing Tactics</p>
+                <div className="grid gap-3">
+                  {data.go_to_market_strategy.marketing_tactics.map((tactic: any, idx: number) => (
+                    <div key={idx} className="p-3 bg-gray-50 rounded-lg">
+                      <p className="text-sm font-semibold text-gray-900">{tactic.title}</p>
+                      <p className="text-xs text-gray-600 mt-1">{tactic.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Distribution Channels */}
+            {data.go_to_market_strategy.distribution_channels && data.go_to_market_strategy.distribution_channels.length > 0 && (
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-2">Distribution Channels</p>
+                <div className="space-y-2">
+                  {data.go_to_market_strategy.distribution_channels.map((channel: any, idx: number) => (
+                    <div key={idx} className="p-3 bg-gray-50 rounded-lg">
+                      <div className="flex justify-between items-start mb-1">
+                        <p className="text-sm font-semibold text-gray-900">{channel.channel}</p>
+                        <Badge className="text-xs">{channel.priority}</Badge>
+                      </div>
+                      <p className="text-xs text-gray-600">{channel.notes}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Technical Feasibility */}
+      {data.technical_feasibility && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="w-5 h-5 text-blue-600" />
+              Technical Feasibility
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {data.technical_feasibility.technical_complexity && (
+              <div className="p-3 bg-blue-50 rounded-lg">
+                <p className="text-xs text-gray-600">Technical Complexity</p>
+                <p className="text-sm font-semibold text-gray-900">{data.technical_feasibility.technical_complexity}</p>
+              </div>
+            )}
+            
+            {data.technical_feasibility.core_capabilities_required && data.technical_feasibility.core_capabilities_required.length > 0 && (
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-2">Core Capabilities Required</p>
+                <ul className="space-y-1">
+                  {data.technical_feasibility.core_capabilities_required.map((cap: string, idx: number) => (
+                    <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
+                      <span className="text-blue-600">•</span>
+                      <span>{cap}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {data.technical_feasibility.technology_stack && data.technical_feasibility.technology_stack.length > 0 && (
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-2">Technology Stack</p>
+                <div className="space-y-2">
+                  {data.technical_feasibility.technology_stack.map((tech: any, idx: number) => (
+                    <div key={idx} className="p-3 bg-gray-50 rounded-lg">
+                      <p className="text-sm font-semibold text-gray-900">{tech.component}</p>
+                      <p className="text-xs text-gray-600 mt-1">{tech.options}</p>
+                      <Badge className="text-xs mt-1">{tech.complexity}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {data.technical_feasibility.scalability_potential && (
+              <div className="p-4 bg-green-50 rounded-lg">
+                <p className="text-sm font-semibold text-green-900 mb-1">Scalability Potential</p>
+                <p className="text-sm text-gray-700">{data.technical_feasibility.scalability_potential}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Market Analysis - Competition & Demand */}
+      {data.market_analysis && (data.market_analysis.competition_landscape || data.market_analysis.demand_validation) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-yellow-600" />
+              Competition & Demand Analysis
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Direct Competitors */}
+            {data.market_analysis.competition_landscape?.direct_competitors && (
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-2">Direct Competitors</p>
+                <div className="space-y-2">
+                  {data.market_analysis.competition_landscape.direct_competitors.map((comp: any, idx: number) => (
+                    <div key={idx} className="p-3 bg-gray-50 rounded-lg">
+                      <p className="text-sm font-semibold text-gray-900">{comp.name}</p>
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        <div>
+                          <p className="text-xs text-green-700">✓ Strength</p>
+                          <p className="text-xs text-gray-600">{comp.strength}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-red-700">✗ Weakness</p>
+                          <p className="text-xs text-gray-600">{comp.weakness}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Market Gap */}
+            {data.market_analysis.competition_landscape?.market_gap && (
+              <div className="p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-500">
+                <p className="text-sm font-semibold text-yellow-900 mb-1">Market Gap Opportunity</p>
+                <p className="text-sm text-gray-700">{data.market_analysis.competition_landscape.market_gap}</p>
+              </div>
+            )}
+            
+            {/* Demand Validation */}
+            {data.market_analysis.demand_validation && (
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-2">Demand Validation</p>
+                {data.market_analysis.demand_validation.search_trends && (
+                  <div className="p-3 bg-gray-50 rounded-lg mb-2">
+                    <p className="text-xs text-gray-600">Search Trends</p>
+                    <p className="text-sm text-gray-900">{data.market_analysis.demand_validation.search_trends}</p>
+                  </div>
+                )}
+                {data.market_analysis.demand_validation.social_proof && (
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-xs text-gray-600">Social Proof</p>
+                    <p className="text-sm text-gray-900">{data.market_analysis.demand_validation.social_proof}</p>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Regulatory Considerations */}
+            {data.market_analysis.regulatory_considerations && data.market_analysis.regulatory_considerations.length > 0 && (
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-2">Regulatory Considerations</p>
+                <ul className="space-y-1">
+                  {data.market_analysis.regulatory_considerations.map((reg: string, idx: number) => (
+                    <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
+                      <span className="text-yellow-600">⚠</span>
+                      <span>{reg}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Financial Details - Revenue & Costs */}
+      {data.financial_feasibility && (data.financial_feasibility.revenue_projections || data.financial_feasibility.monthly_operating_costs) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-green-600" />
+              Revenue Projections & Operating Costs
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Revenue Projections */}
+            {data.financial_feasibility.revenue_projections && (
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-3">Revenue Projections</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {data.financial_feasibility.revenue_projections.month_1_inr && (
+                    <div className="p-3 bg-green-50 rounded-lg text-center">
+                      <p className="text-xs text-gray-600">Month 1</p>
+                      <p className="text-lg font-bold text-green-700">₹{(data.financial_feasibility.revenue_projections.month_1_inr / 100000).toFixed(1)}L</p>
+                    </div>
+                  )}
+                  {data.financial_feasibility.revenue_projections.month_3_inr && (
+                    <div className="p-3 bg-green-50 rounded-lg text-center">
+                      <p className="text-xs text-gray-600">Month 3</p>
+                      <p className="text-lg font-bold text-green-700">₹{(data.financial_feasibility.revenue_projections.month_3_inr / 100000).toFixed(1)}L</p>
+                    </div>
+                  )}
+                  {data.financial_feasibility.revenue_projections.month_6_inr && (
+                    <div className="p-3 bg-green-50 rounded-lg text-center">
+                      <p className="text-xs text-gray-600">Month 6</p>
+                      <p className="text-lg font-bold text-green-700">₹{(data.financial_feasibility.revenue_projections.month_6_inr / 100000).toFixed(1)}L</p>
+                    </div>
+                  )}
+                  {data.financial_feasibility.revenue_projections.month_12_inr && (
+                    <div className="p-3 bg-green-50 rounded-lg text-center">
+                      <p className="text-xs text-gray-600">Month 12</p>
+                      <p className="text-lg font-bold text-green-700">₹{(data.financial_feasibility.revenue_projections.month_12_inr / 100000).toFixed(1)}L</p>
+                    </div>
+                  )}
+                </div>
+                {data.financial_feasibility.revenue_projections.assumptions && (
+                  <p className="text-xs text-gray-600 mt-2">{data.financial_feasibility.revenue_projections.assumptions}</p>
+                )}
+              </div>
+            )}
+            
+            {/* Monthly Operating Costs */}
+            {data.financial_feasibility.monthly_operating_costs && data.financial_feasibility.monthly_operating_costs.length > 0 && (
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-3">Monthly Operating Costs</p>
+                <div className="space-y-2">
+                  {data.financial_feasibility.monthly_operating_costs.map((cost: any, idx: number) => (
+                    <div key={idx} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-900">{cost.category}</p>
+                        {cost.notes && <p className="text-xs text-gray-600">{cost.notes}</p>}
+                      </div>
+                      <p className="text-sm font-semibold text-gray-900">₹{(cost.amount_inr / 1000).toFixed(0)}K</p>
+                    </div>
+                  ))}
+                </div>
+                {data.financial_feasibility.total_monthly_cost_inr && (
+                  <div className="mt-3 p-3 bg-red-50 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm font-semibold text-red-900">Total Monthly Cost</p>
+                      <p className="text-lg font-bold text-red-700">₹{(data.financial_feasibility.total_monthly_cost_inr / 100000).toFixed(2)}L</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

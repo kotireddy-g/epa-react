@@ -13,7 +13,8 @@ import { IdeaConfirmationDialog } from './IdeaConfirmationDialog';
 import { AnalyzingDialog } from './AnalyzingDialog';
 import { DetailedAnalysisView } from './DetailedAnalysisView';
 import { IndustryCategoryDialog } from './IndustryCategoryDialog';
-import { ideaAnalysisApi, type AnalyseResponse, type UserIdeaItem } from '../services/ideaAnalysisApi';
+import { AIFollowUpDialog } from './AIFollowUpDialog';
+import { ideaAnalysisApi, type AnalyseResponse, type UserIdeaItem, type FollowUpQuestion, type ClarifiedFollowUp } from '../services/ideaAnalysisApi';
 import { v4 as uuidv4 } from 'uuid';
 
 interface IdeaPageProps {
@@ -84,6 +85,10 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
   const [isLoadingIdeas, setIsLoadingIdeas] = useState(true);
   const [ideasError, setIdeasError] = useState('');
   const [showIndustryCategoryDialog, setShowIndustryCategoryDialog] = useState(false);
+  const [showFollowUpDialog, setShowFollowUpDialog] = useState(false);
+  const [followUpQuestions, setFollowUpQuestions] = useState<FollowUpQuestion[]>([]);
+  const [pendingIndustry, setPendingIndustry] = useState('');
+  const [pendingCategory, setPendingCategory] = useState('');
   
   const [summaryKeywords, setSummaryKeywords] = useState<IdeaKeywords>({
     location: '',
@@ -152,7 +157,7 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
     // 1) Direct key markers and common synonyms
     const synonymMap: Record<keyof IdeaKeywords, string[]> = {
       location: ['location', 'based in', 'in ', 'at ', 'city', 'country', 'region', 'state'],
-      budget: ['budget', 'cost', 'spend', 'investment', 'capex', 'opex', 'price'],
+      budget: [], // Removed generic triggers - budget extraction now relies on number+currency patterns only
       category: ['category', 'segment', 'type'],
       industry: ['industry', 'vertical', 'sector', 'field'],
       domain: ['domain', 'area', 'niche'],
@@ -206,15 +211,24 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
     }
 
     // Budget: currency, ranges (enhanced for Indian formats)
+    // Only match if there's a number with currency/amount indicator
     if (!extracted.budget) {
-      // Indian formats: 80L, 80 Lakhs, 20C, 20 Crores, 5Cr, etc.
-      const indianMatch = /(\d+(?:\.\d+)?\s*(?:l|lakh|lakhs|c|cr|crore|crores)(?:\s+(?:rupees|inr|budget|investment))?)/i.exec(text);
+      // Indian formats: 80L, 80 Lakhs, 20C, 20 Crores, 5Cr, ₹80L, etc.
+      const indianMatch = /(?:₹|rs\.?|inr)?\s*(\d+(?:\.\d+)?\s*(?:l|lakh|lakhs|c|cr|crore|crores))/i.exec(text);
       if (indianMatch) {
         extracted.budget = indianMatch[0];
       } else {
         // International formats: $50k, $1M, 1000 USD, etc.
-        const intlMatch = /(\$\s?\d[\d,]*(?:\.\d+)?\s?(?:k|m|million|thousand|billion)?|\d+\s?(?:usd|dollars|inr|rupees))/i.exec(text);
-        if (intlMatch) extracted.budget = intlMatch[0];
+        const intlMatch = /(\$\s?\d[\d,]*(?:\.\d+)?\s?(?:k|m|million|thousand|billion)|\d+\s?(?:usd|dollars))/i.exec(text);
+        if (intlMatch) {
+          extracted.budget = intlMatch[0];
+        } else {
+          // Explicit budget mentions with numbers: "budget of 50 lakhs", "50 lakhs budget"
+          const explicitMatch = /(?:budget|investment|capital|funding)(?:\s+of)?\s+(?:₹|rs\.?)?\s*(\d+(?:\.\d+)?\s*(?:l|lakh|lakhs|c|cr|crore|crores|k|thousand|million))/i.exec(text);
+          if (explicitMatch) {
+            extracted.budget = explicitMatch[1];
+          }
+        }
       }
     }
 
@@ -349,26 +363,76 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
   };
 
   const handleIndustryCategorySubmit = async (industry: string, category: string) => {
+    // Close industry/category dialog
+    setShowIndustryCategoryDialog(false);
+    
+    // Show analyzing dialog while calling clarify API
+    setIsAnalyzing(true);
+    
+    // Store industry and category for later use
+    setPendingIndustry(industry);
+    setPendingCategory(category);
+    
+    // Generate UUID for new idea if not already set
+    const currentIdeaId = ideaId || uuidv4();
+    if (!ideaId) {
+      setIdeaId(currentIdeaId);
+      console.log('[EnhancedIdeaPage] Generated new idea_id:', currentIdeaId);
+    }
+    
+    try {
+      // Call clarify API to get follow-up questions
+      console.log('[EnhancedIdeaPage] Calling clarify API...');
+      
+      const clarifyPayload = {
+        idea_id: currentIdeaId,
+        idea: {
+          title: summary,
+          description: summary,
+          industry: industry,
+          target_location: summaryKeywords.location || '',
+          business_model: summaryKeywords.category || category || ''
+        }
+      };
+      
+      const clarifyResponse = await ideaAnalysisApi.clarifyIdea(clarifyPayload);
+      console.log('[EnhancedIdeaPage] Clarify response:', clarifyResponse);
+      
+      // Hide analyzing dialog
+      setIsAnalyzing(false);
+      
+      // Show follow-up questions dialog
+      setFollowUpQuestions(clarifyResponse.questions);
+      setShowFollowUpDialog(true);
+      
+    } catch (error) {
+      console.error('[EnhancedIdeaPage] Error calling clarify API:', error);
+      setIsAnalyzing(false); // Hide analyzing dialog
+      alert('Failed to get follow-up questions. Please try again.');
+      setShowIndustryCategoryDialog(true); // Show industry dialog again
+    }
+  };
+
+  const handleFollowUpSubmit = async (answers: ClarifiedFollowUp[]) => {
+    setShowFollowUpDialog(false);
     setIsAnalyzing(true);
     setSummarySubmitted(true);
     
     try {
-      // Generate UUID for new idea if not already set
       const currentIdeaId = ideaId || uuidv4();
-      if (!ideaId) {
-        setIdeaId(currentIdeaId);
-        console.log('[EnhancedIdeaPage] Generated new idea_id:', currentIdeaId);
-      }
-
-      // Create payload using the API service with industry and category
+      
+      // Create payload using the API service with industry, category, and clarified followups
       const payload = ideaAnalysisApi.createAnalysePayload(
         summary,
-        category,
-        industry,
-        currentIdeaId
+        pendingCategory,
+        pendingIndustry,
+        currentIdeaId,
+        answers
       );
 
-      // Call the API
+      console.log('[EnhancedIdeaPage] Calling analyze API with clarified followups:', payload);
+
+      // Call the analyze API
       const response = await ideaAnalysisApi.analyseIdea(payload);
       
       setApiResponse(response);
@@ -377,20 +441,20 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
       // Pass response to parent for suggestions panel
       onApiResponse?.(response);
 
-      // Auto-fill keywords from API response
-      const attrs = response.final_output?.market_attributes;
+      // Auto-fill keywords from API response - Handle nested structure
+      const attrs = response.final_output?.market_attributes as any;
       if (attrs) {
         setSummaryKeywords({
-          location: String(attrs.location || ''),
-          budget: String(attrs.budget || ''),
-          category: String(attrs.category || category),
-          industry: String(attrs.industry || industry),
-          domain: String(attrs.domain || ''),
-          timeline: String(attrs.timeline || ''),
-          target: String(attrs.target || ''),
-          scalability: String(attrs.scalability || ''),
-          validation: String(attrs.validation || ''),
-          metrics: String(attrs.metrics || '')
+          location: String((attrs.location?.value || attrs.location || '')),
+          budget: String((attrs.budget?.value || attrs.budget || '')),
+          category: String((attrs.category?.value || attrs.category || pendingCategory)),
+          industry: String((attrs.industry?.value || attrs.industry || pendingIndustry)),
+          domain: String((attrs.domain?.value || attrs.domain || '')),
+          timeline: String((attrs.timeline?.value || attrs.timeline || '')),
+          target: String((attrs.target?.value || attrs.target || '')),
+          scalability: String((attrs.scalability?.value || attrs.scalability || '')),
+          validation: String((attrs.validation?.value || attrs.validation || '')),
+          metrics: String((attrs.metrics?.value || attrs.metrics || ''))
         });
       }
 
@@ -670,6 +734,14 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
           onSubmit={handleIndustryCategorySubmit}
         />
 
+        {/* AI Follow-Up Questions Dialog */}
+        <AIFollowUpDialog
+          isOpen={showFollowUpDialog}
+          onClose={() => setShowFollowUpDialog(false)}
+          questions={followUpQuestions}
+          onSubmit={handleFollowUpSubmit}
+        />
+
         {/* Analyzing Dialog - Shows during API call */}
         <AnalyzingDialog open={isAnalyzing} />
 
@@ -936,7 +1008,10 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
                           animate={{ opacity: 1, scale: 1 }}
                           className="mt-6"
                         >
-                          <DetailedAnalysisView data={apiResponse.final_output} />
+                          <DetailedAnalysisView 
+                            data={apiResponse.final_output} 
+                            additionalInfo={apiResponse.additional_information}
+                          />
                         </motion.div>
                       )}
                     </div>
