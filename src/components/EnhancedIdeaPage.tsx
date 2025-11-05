@@ -539,6 +539,27 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
       // Pass response to parent for suggestions panel
       onApiResponse?.(response);
 
+      // Insert analysis data to database (non-blocking)
+      const userId = ideaAnalysisApi.getUserId();
+      if (userId && response.idea_id) {
+        console.log('[EnhancedIdeaPage] Persisting analysis data to database...');
+        ideaAnalysisApi.insertAnalysisData({
+          userId,
+          stage: 'Analysis',
+          idea_id: response.idea_id,
+          final_output: response.final_output || {},
+          live_references: response.live_references || {}
+        }).then(result => {
+          if (result.success) {
+            console.log('[EnhancedIdeaPage] Analysis data persisted successfully');
+          } else {
+            console.error('[EnhancedIdeaPage] Failed to persist analysis data:', result.error);
+          }
+        }).catch(err => {
+          console.error('[EnhancedIdeaPage] Error persisting analysis data:', err);
+        });
+      }
+
       // Auto-fill keywords from API response - Handle nested structure
       const attrs = response.final_output?.market_attributes as any;
       if (attrs) {
@@ -887,36 +908,88 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
 
         {/* User Ideas List */}
         {!showCreateForm && (
-          <div className="mb-8">
-            {isLoadingIdeas ? (
-              <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
-                <p className="mt-4 text-gray-600">Loading your ideas...</p>
+          <div className="space-y-8">
+            {/* Drafts Section - Local ideas that haven't been analyzed yet */}
+            {activeIdeas.length > 0 && (
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Drafts</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {activeIdeas.map((idea) => (
+                    <Card key={idea.id} className="hover:shadow-lg transition-shadow border-dashed border-2">
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <Badge className="mb-2 bg-gray-500 text-white">Draft</Badge>
+                            <CardTitle className="text-base line-clamp-2">{idea.summary}</CardTitle>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {idea.description && (
+                          <p className="text-sm text-gray-600 mb-3 line-clamp-2">{idea.description}</p>
+                        )}
+                        <div className="space-y-2 text-xs text-gray-500">
+                          <div className="flex items-center gap-2">
+                            <span>📅</span>
+                            <span>{new Date(idea.createdAt).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                        <Button 
+                          className="w-full mt-4" 
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            // TODO: Handle draft click - will be implemented in Point 3
+                            console.log('Draft clicked:', idea);
+                          }}
+                        >
+                          Continue Editing
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
-            ) : ideasError ? (
-              <Card className="border-red-200 bg-red-50">
-                <CardContent className="pt-6">
-                  <p className="text-red-600">{ideasError}</p>
-                </CardContent>
-              </Card>
-            ) : userIdeas.length === 0 ? (
-              <Card className="border-dashed border-2">
-                <CardContent className="pt-12 pb-12 text-center">
-                  <Sparkles className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No ideas yet</h3>
-                  <p className="text-gray-600 mb-4">Start your journey by creating your first idea</p>
-                  <Button 
-                    onClick={handleStartCreate}
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Your First Idea
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Array.isArray(userIdeas) && userIdeas.map((idea) => {
+            )}
+
+            {/* Your Active Ideas Section - Ideas from API */}
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Active Ideas</h2>
+              {isLoadingIdeas ? (
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                  <p className="mt-4 text-gray-600">Loading your ideas...</p>
+                </div>
+              ) : ideasError ? (
+                <Card className="border-red-200 bg-red-50">
+                  <CardContent className="pt-6">
+                    <p className="text-red-600">{ideasError}</p>
+                  </CardContent>
+                </Card>
+              ) : userIdeas.length === 0 && activeIdeas.length === 0 ? (
+                <Card className="border-dashed border-2">
+                  <CardContent className="pt-12 pb-12 text-center">
+                    <Sparkles className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No ideas yet</h3>
+                    <p className="text-gray-600 mb-4">Start your journey by creating your first idea</p>
+                    <Button 
+                      onClick={handleStartCreate}
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Your First Idea
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : userIdeas.length === 0 ? (
+                <Card className="border-dashed border-2">
+                  <CardContent className="pt-8 pb-8 text-center">
+                    <p className="text-gray-600">No active ideas yet. Analyze your drafts to see them here!</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Array.isArray(userIdeas) && userIdeas.map((idea) => {
                   const ideaDescription = idea.analysis_data?.validation_data?.idea_description || 'No description';
                   const verdict = idea.analysis_data?.validation_data?.verdict;
                   const marketAttrs = idea.analysis_data?.validation_data?.market_attributes;
@@ -1011,6 +1084,7 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
                 })}
               </div>
             )}
+            </div>
           </div>
         )}
 

@@ -240,10 +240,12 @@ export default function App() {
   // Show profile setup if authenticated but profile not complete
   if (isAuthenticated && !isProfileComplete) {
     return (
-      <div className="flex h-screen bg-gray-50">
-        <ProfileSetupPage onComplete={handleProfileComplete} />
-        <SuggestionsPanel currentPage="profile" currentIdea={null} isProfileSetup={true} />
-      </div>
+      <VideoEngagementProvider>
+        <div className="flex h-screen bg-gray-50">
+          <ProfileSetupPage onComplete={handleProfileComplete} />
+          <SuggestionsPanel currentPage="profile" currentIdea={null} isProfileSetup={true} />
+        </div>
+      </VideoEngagementProvider>
     );
   }
 

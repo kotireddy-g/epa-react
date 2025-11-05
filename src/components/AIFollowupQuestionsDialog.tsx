@@ -131,6 +131,27 @@ export function AIFollowupQuestionsDialog({
       
       console.log('[AIFollowupQuestions] Plan response received:', planResponse);
       
+      // Insert plan data to database (non-blocking)
+      const userId = ideaAnalysisApi.getUserId();
+      if (userId && planResponse.idea_id) {
+        console.log('[AIFollowupQuestions] Persisting plan data to database...');
+        ideaAnalysisApi.insertIdeaPlanData({
+          userId,
+          stage: 'Implementation',
+          idea_id: planResponse.idea_id,
+          final_output: planResponse.final_output || {},
+          live_references: planResponse.live_references || {}
+        }).then(result => {
+          if (result.success) {
+            console.log('[AIFollowupQuestions] Plan data persisted successfully');
+          } else {
+            console.error('[AIFollowupQuestions] Failed to persist plan data:', result.error);
+          }
+        }).catch(err => {
+          console.error('[AIFollowupQuestions] Error persisting plan data:', err);
+        });
+      }
+      
       // Pass the response to parent
       onComplete(planResponse);
     } catch (err: any) {

@@ -355,6 +355,27 @@ export function NewValidationPage({
       setValidationResponse(response);
       onValidationResponse?.(response);
       
+      // Insert validation data to database (non-blocking)
+      const userId = ideaAnalysisApi.getUserId();
+      if (userId && response.idea_id) {
+        console.log('[ValidationPage] Persisting validation data to database...');
+        ideaAnalysisApi.insertValidationCompletedData({
+          userId,
+          stage: 'Validation',
+          idea_id: response.idea_id,
+          final_output: response.final_output || {},
+          live_references: response.live_references || {}
+        }).then(result => {
+          if (result.success) {
+            console.log('[ValidationPage] Validation data persisted successfully');
+          } else {
+            console.error('[ValidationPage] Failed to persist validation data:', result.error);
+          }
+        }).catch(err => {
+          console.error('[ValidationPage] Error persisting validation data:', err);
+        });
+      }
+      
       // Show follow-up questions dialog
       setShowFollowupDialog(true);
     } catch (error: any) {

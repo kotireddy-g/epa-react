@@ -59,8 +59,19 @@ export function SuggestionsPanel({ currentPage, currentIdea, isProfileSetup = fa
   
   const getSuggestions = () => {
     if (isProfileSetup) {
-      // Use real videos for profile setup if available
-      const profileVideos = contextVideos.map(v => ({
+      // Use real videos from feed API for profile setup
+      // Try to get videos from 'general' or 'startup' or 'profile' sections
+      let feedVideos = videosBySection.general || videosBySection.startup || videosBySection.profile || [];
+      
+      // If no videos in those sections, try any available section
+      if (feedVideos.length === 0) {
+        const allSections = Object.values(videosBySection);
+        if (allSections.length > 0) {
+          feedVideos = allSections[0] || [];
+        }
+      }
+      
+      const profileVideos = feedVideos.slice(0, 6).map(v => ({
         type: 'video',
         title: v.title,
         source: v.author,

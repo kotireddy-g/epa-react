@@ -94,7 +94,17 @@ export function ProfileSetupPage({ onComplete }: ProfileSetupPageProps) {
   const handleTypeSelect = (type: UserType, enabled: boolean) => {
     if (!enabled) return;
     setSelectedType(type);
-    setStep('form');
+    
+    // Skip profile form and directly complete profile
+    // User info is already collected during registration/signup
+    console.log('[ProfileSetup] User selected type:', type);
+    console.log('[ProfileSetup] Skipping profile form, completing profile directly...');
+    
+    onComplete({
+      userType: type,
+      // Profile data will be fetched from user object in localStorage
+      // which was populated during registration
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {

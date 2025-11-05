@@ -123,6 +123,37 @@ export interface ValidateAnswersResponse {
   issues?: AnswerIssue[];
 }
 
+// Interfaces for insert APIs (data persistence)
+export interface InsertAnalysisDataPayload {
+  userId: number;
+  stage: 'Analysis';
+  idea_id: string;
+  final_output: any;
+  live_references?: any;
+}
+
+export interface InsertValidationDataPayload {
+  userId: number;
+  stage: 'Validation';
+  idea_id: string;
+  final_output: any;
+  live_references?: any;
+}
+
+export interface InsertPlanDataPayload {
+  userId: number;
+  stage: 'Implementation';
+  idea_id: string;
+  final_output: any;
+  live_references?: any;
+}
+
+export interface InsertDataResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+}
+
 export interface ClarifiedFollowUp {
   question_id: string;
   question: string;
@@ -214,6 +245,7 @@ export interface AnalyseResponse {
     'Judge(GPT-4)': string;
   };
   final_output: FinalOutput;
+  live_references?: any; // References from LLM (videos, articles, etc.)
 }
 
 // Validation API Types
@@ -308,6 +340,7 @@ export interface ValidationResponse {
   final_output: ValidationFinalOutput;
   calculated_confidence_score1: number;
   question_scoring_table_calc: any[];
+  live_references?: any; // References from LLM (videos, articles, etc.)
 }
 
 // Plan API Types
@@ -336,6 +369,8 @@ export interface PlanResponse {
   implementation?: any;
   outcomes?: any;
   meta?: any;
+  final_output?: any; // Complete plan output
+  live_references?: any; // References from LLM (videos, articles, etc.)
 }
 
 // User Ideas List Types
@@ -827,6 +862,144 @@ class IdeaAnalysisApiService {
     } catch (error) {
       console.error('[IdeaAnalysisAPI] Error calling validate-answers API:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Insert analysis data to database after /analyze API
+   */
+  async insertAnalysisData(payload: InsertAnalysisDataPayload): Promise<InsertDataResponse> {
+    const accessToken = authApi.getAccessToken();
+    
+    if (!accessToken) {
+      console.error('[IdeaAnalysisAPI] No access token available');
+      throw new Error('Authentication required. Please login.');
+    }
+
+    console.log('[IdeaAnalysisAPI] Inserting analysis data to database...');
+
+    try {
+      const response = await authApi.fetchWithAuth(`${API_BASE_URL}/ideabusinessplan/insert-validation-data/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[IdeaAnalysisAPI] Insert analysis data failed:', response.status, errorData);
+        return { success: false, error: errorData.message || `API returned ${response.status}` };
+      }
+
+      const data = await response.json();
+      console.log('[IdeaAnalysisAPI] Analysis data inserted successfully');
+      return { success: true, ...data };
+    } catch (error) {
+      console.error('[IdeaAnalysisAPI] Error inserting analysis data:', error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  /**
+   * Insert validation data to database after /validate API
+   */
+  async insertValidationCompletedData(payload: InsertValidationDataPayload): Promise<InsertDataResponse> {
+    const accessToken = authApi.getAccessToken();
+    
+    if (!accessToken) {
+      console.error('[IdeaAnalysisAPI] No access token available');
+      throw new Error('Authentication required. Please login.');
+    }
+
+    console.log('[IdeaAnalysisAPI] Inserting validation completed data to database...');
+
+    try {
+      const response = await authApi.fetchWithAuth(`${API_BASE_URL}/ideabusinessplan/insert-validationcompleted-data/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[IdeaAnalysisAPI] Insert validation data failed:', response.status, errorData);
+        return { success: false, error: errorData.message || `API returned ${response.status}` };
+      }
+
+      const data = await response.json();
+      console.log('[IdeaAnalysisAPI] Validation data inserted successfully');
+      return { success: true, ...data };
+    } catch (error) {
+      console.error('[IdeaAnalysisAPI] Error inserting validation data:', error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  /**
+   * Insert plan data to database after /plan API
+   */
+  async insertIdeaPlanData(payload: InsertPlanDataPayload): Promise<InsertDataResponse> {
+    const accessToken = authApi.getAccessToken();
+    
+    if (!accessToken) {
+      console.error('[IdeaAnalysisAPI] No access token available');
+      throw new Error('Authentication required. Please login.');
+    }
+
+    console.log('[IdeaAnalysisAPI] Inserting idea plan data to database...');
+
+    try {
+      const response = await authApi.fetchWithAuth(`${API_BASE_URL}/ideabusinessplan/insert-ideaplan-data/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[IdeaAnalysisAPI] Insert plan data failed:', response.status, errorData);
+        return { success: false, error: errorData.message || `API returned ${response.status}` };
+      }
+
+      const data = await response.json();
+      console.log('[IdeaAnalysisAPI] Plan data inserted successfully');
+      return { success: true, ...data };
+    } catch (error) {
+      console.error('[IdeaAnalysisAPI] Error inserting plan data:', error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  /**
+   * Get user ID from localStorage
+   */
+  getUserId(): number | null {
+    try {
+      // User data is stored in executionPlannerSession
+      const sessionStr = localStorage.getItem('executionPlannerSession');
+      if (!sessionStr) {
+        console.warn('[IdeaAnalysisAPI] No session data in localStorage');
+        return null;
+      }
+      const session = JSON.parse(sessionStr);
+      const userId = session.user?.id || null;
+      
+      if (!userId) {
+        console.warn('[IdeaAnalysisAPI] No user ID found in session');
+      } else {
+        console.log('[IdeaAnalysisAPI] User ID retrieved:', userId);
+      }
+      
+      return userId;
+    } catch (error) {
+      console.error('[IdeaAnalysisAPI] Error getting user ID:', error);
+      return null;
     }
   }
 
