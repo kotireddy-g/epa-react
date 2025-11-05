@@ -14,8 +14,10 @@ import { AnalyzingDialog } from './AnalyzingDialog';
 import { DetailedAnalysisView } from './DetailedAnalysisView';
 import { IndustryCategoryDialog } from './IndustryCategoryDialog';
 import { AIFollowUpDialog } from './AIFollowUpDialog';
+import { InvalidIdeaDialog } from './InvalidIdeaDialog';
 import { ideaAnalysisApi, type AnalyseResponse, type UserIdeaItem, type FollowUpQuestion, type ClarifiedFollowUp } from '../services/ideaAnalysisApi';
 import { v4 as uuidv4 } from 'uuid';
+import { useVideoEngagement } from '../context/VideoEngagementContext';
 
 interface IdeaPageProps {
   ideas: Idea[];
@@ -71,6 +73,7 @@ const FIXED_KEYWORDS: (keyof IdeaKeywords)[] = [
 ];
 
 export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiResponse, onNavigateToValidation, onNavigateToPlan, onShowFollowupQuestions }: IdeaPageProps) {
+  const { videosBySection, loading: videosLoading } = useVideoEngagement();
   const [showJourneyDialog, setShowJourneyDialog] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [summary, setSummary] = useState('');
@@ -89,6 +92,14 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
   const [followUpQuestions, setFollowUpQuestions] = useState<FollowUpQuestion[]>([]);
   const [pendingIndustry, setPendingIndustry] = useState('');
   const [pendingCategory, setPendingCategory] = useState('');
+  const [showInvalidIdeaDialog, setShowInvalidIdeaDialog] = useState(false);
+  const [invalidIdeaMessage, setInvalidIdeaMessage] = useState('');
+  const [invalidIdeaExamples, setInvalidIdeaExamples] = useState<string[]>([]);
+  const [invalidIdeaTemplate, setInvalidIdeaTemplate] = useState('');
+  const [answerValidationErrors, setAnswerValidationErrors] = useState<Record<string, string>>({});
+  
+  // Get videos for the journey dialog
+  const journeyVideos = videosBySection.idea || videosBySection.general || [];
   
   const [summaryKeywords, setSummaryKeywords] = useState<IdeaKeywords>({
     location: '',
@@ -347,18 +358,43 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
       return;
     }
 
-    // Try to extract industry and category from existing keywords
-    const existingIndustry = summaryKeywords.industry?.trim();
-    const existingCategory = summaryKeywords.category?.trim();
+    // Step 1: Validate the idea using guard API
+    setIsAnalyzing(true);
+    try {
+      console.log('[EnhancedIdeaPage] Validating idea with guard API...');
+      const guardResponse = await ideaAnalysisApi.guardIdea({ idea: summary });
+      
+      // Check if idea is invalid
+      if (!guardResponse.ok) {
+        console.log('[EnhancedIdeaPage] Guard API rejected the idea');
+        setIsAnalyzing(false);
+        setInvalidIdeaMessage(guardResponse.error || 'Please provide a valid business idea.');
+        setInvalidIdeaExamples(guardResponse.examples || []);
+        setInvalidIdeaTemplate(''); // Guard API doesn't provide template
+        setShowInvalidIdeaDialog(true);
+        return;
+      }
+      
+      console.log('[EnhancedIdeaPage] Idea validated successfully:', guardResponse.idea_normalized);
+      setIsAnalyzing(false);
+      
+      // Step 2: Try to extract industry and category from existing keywords
+      const existingIndustry = summaryKeywords.industry?.trim();
+      const existingCategory = summaryKeywords.category?.trim();
 
-    // If both industry and category are already filled, proceed directly
-    if (existingIndustry && existingCategory) {
-      console.log('[EnhancedIdeaPage] Industry and Category already extracted, proceeding directly');
-      await handleIndustryCategorySubmit(existingIndustry, existingCategory);
-    } else {
-      // Show industry/category dialog to collect missing information
-      console.log('[EnhancedIdeaPage] Industry or Category missing, showing dialog');
-      setShowIndustryCategoryDialog(true);
+      // If both industry and category are already filled, proceed directly
+      if (existingIndustry && existingCategory) {
+        console.log('[EnhancedIdeaPage] Industry and Category already extracted, proceeding directly');
+        await handleIndustryCategorySubmit(existingIndustry, existingCategory);
+      } else {
+        // Show industry/category dialog to collect missing information
+        console.log('[EnhancedIdeaPage] Industry or Category missing, showing dialog');
+        setShowIndustryCategoryDialog(true);
+      }
+    } catch (error) {
+      console.error('[EnhancedIdeaPage] Error validating idea:', error);
+      setIsAnalyzing(false);
+      alert('Failed to validate idea. Please try again.');
     }
   };
 
@@ -401,8 +437,36 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
       // Hide analyzing dialog
       setIsAnalyzing(false);
       
-      // Show follow-up questions dialog
-      setFollowUpQuestions(clarifyResponse.questions);
+      // Check if response has valid questions (success case)
+      const hasValidQuestions = clarifyResponse.questions && clarifyResponse.questions.length > 0;
+      
+      // If no valid questions, treat as error response (regardless of status)
+      if (!hasValidQuestions) {
+        console.log('[EnhancedIdeaPage] Non-success response detected, showing guidance dialog');
+        
+        // Extract error information from response (works for any error format)
+        const errorMessage = clarifyResponse.message 
+          || clarifyResponse.error 
+          || 'Please provide a clearer business idea with more details.';
+        
+        const errorExamples = clarifyResponse.examples || [];
+        const errorTemplate = clarifyResponse.template || '';
+        
+        // Log the status for debugging
+        if (clarifyResponse.status) {
+          console.log('[EnhancedIdeaPage] Response status:', clarifyResponse.status);
+        }
+        
+        setInvalidIdeaMessage(errorMessage);
+        setInvalidIdeaExamples(errorExamples);
+        setInvalidIdeaTemplate(errorTemplate);
+        setShowInvalidIdeaDialog(true);
+        return;
+      }
+      
+      // Success case: Show follow-up questions dialog
+      console.log('[EnhancedIdeaPage] Valid response with questions, proceeding to follow-up dialog');
+      setFollowUpQuestions(clarifyResponse.questions!); // Non-null assertion safe here due to hasValidQuestions check
       setShowFollowUpDialog(true);
       
     } catch (error) {
@@ -414,11 +478,45 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
   };
 
   const handleFollowUpSubmit = async (answers: ClarifiedFollowUp[]) => {
-    setShowFollowUpDialog(false);
+    // Clear previous validation errors
+    setAnswerValidationErrors({});
     setIsAnalyzing(true);
-    setSummarySubmitted(true);
     
     try {
+      // Step 1: Validate answers before submitting
+      console.log('[EnhancedIdeaPage] Validating answers...');
+      const answersMap = answers.reduce((acc, a) => {
+        acc[a.question_id] = a.answer;
+        return acc;
+      }, {} as Record<string, string>);
+      
+      const validateResponse = await ideaAnalysisApi.validateAnswers({
+        questions: followUpQuestions,
+        answers: answersMap
+      });
+      
+      // Check if validation failed
+      if (!validateResponse.ok && validateResponse.issues) {
+        console.log('[EnhancedIdeaPage] Answer validation failed:', validateResponse.issues);
+        setIsAnalyzing(false);
+        
+        // Convert issues array to error map
+        const errorMap = validateResponse.issues.reduce((acc, issue) => {
+          acc[issue.id] = issue.msg;
+          return acc;
+        }, {} as Record<string, string>);
+        
+        setAnswerValidationErrors(errorMap);
+        // Keep dialog open to show errors
+        return;
+      }
+      
+      console.log('[EnhancedIdeaPage] Answers validated successfully');
+      
+      // Step 2: Close dialog and proceed with analysis
+      setShowFollowUpDialog(false);
+      setSummarySubmitted(true);
+      
       const currentIdeaId = ideaId || uuidv4();
       
       // Create payload using the API service with industry, category, and clarified followups
@@ -725,6 +823,8 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
           isOpen={showJourneyDialog}
           onClose={() => setShowJourneyDialog(false)}
           onContinue={handleContinueToForm}
+          videos={journeyVideos}
+          loadingVideos={videosLoading}
         />
 
         {/* Industry & Category Selection Dialog */}
@@ -740,6 +840,23 @@ export function EnhancedIdeaPage({ ideas, onIdeaSubmit, onIdeaAccept, onApiRespo
           onClose={() => setShowFollowUpDialog(false)}
           questions={followUpQuestions}
           onSubmit={handleFollowUpSubmit}
+          validationErrors={answerValidationErrors}
+        />
+
+        {/* Invalid Idea Dialog - Shows when user enters unclear/random text */}
+        <InvalidIdeaDialog
+          isOpen={showInvalidIdeaDialog}
+          onClose={() => {
+            setShowInvalidIdeaDialog(false);
+            // Reset form to allow user to enter a clearer idea
+            setSummary('');
+            setDescription('');
+            setSummarySubmitted(false);
+            setShowCreateForm(true);
+          }}
+          message={invalidIdeaMessage}
+          examples={invalidIdeaExamples}
+          template={invalidIdeaTemplate}
         />
 
         {/* Analyzing Dialog - Shows during API call */}

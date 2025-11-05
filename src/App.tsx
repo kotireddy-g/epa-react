@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { LandingPage } from './components/LandingPage';
+import { VideoEngagementProvider } from './context/VideoEngagementContext';
+import { VideoEngagementTray } from './components/VideoEngagementTray';
 import { Sidebar } from './components/Sidebar';
 import { SuggestionsPanel } from './components/SuggestionsPanel';
 import { IntroVideoPage } from './components/IntroVideoPage';
@@ -177,14 +179,24 @@ export default function App() {
 
   const navigateToPage = (page: typeof currentPage) => {
     setCurrentPage(page);
-    // Reset idea page when navigating to it
-    if (page === 'idea') {
+    // ONLY reset idea page when no active idea exists
+    // This prevents losing progress when navigating back from other tabs
+    if (page === 'idea' && !currentIdea) {
       setIdeaPageKey(prev => prev + 1);
     }
   };
 
   const handleHomeClick = () => {
-    // Navigate to Idea page and reset it
+    // Home button = fresh start intent
+    // Clear all state and reset to new idea form
+    setCurrentIdea(null);
+    setApiResponse(null);
+    setValidationResponse(null);
+    setPlanResponse(null);
+    setDetailedDescription('');
+    setIndustryCategory('');
+    setDomainValue('');
+    setCompanyName('');
     setCurrentPage('idea');
     setIdeaPageKey(prev => prev + 1);
   };
@@ -237,138 +249,144 @@ export default function App() {
 
   // Show main application
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar 
-        currentPage={currentPage} 
-        onNavigate={navigateToPage} 
-        onHome={handleHomeClick}
-        onLogout={handleLogout}
-      />
-      
-      {/* Floating Home Button */}
-      <FloatingHomeButton onClick={handleHomeClick} />
-      
-      <main className="flex-1 overflow-auto">
-        {currentPage === 'idea' && (
-          <EnhancedIdeaPage 
-            key={ideaPageKey}
-            ideas={ideas} 
-            onIdeaSubmit={handleIdeaSubmit}
-            onIdeaAccept={handleIdeaAccept}
-            onIdeaUpdate={(updatedIdea: Idea) => {
-              setIdeas(prev => prev.map(i => i.id === updatedIdea.id ? updatedIdea : i));
-            }}
-            onApiResponse={setApiResponse}
-            onNavigateToValidation={(ideaId: string, validationData: any) => {
-              // Create or update idea with validation data
-              const newIdea: Idea = {
-                id: ideaId,
-                ideaId: ideaId,
-                summary: validationData?.validation_data?.idea_description || 'Idea',
-                description: validationData?.validation_data?.verdict?.text || '',
-                bulletPoints: [],
-                status: 'draft',
-                createdAt: new Date(),
-                isActive: true,
-                detailedDescription: validationData?.validation_data?.idea_description || '',
-              };
-              setCurrentIdea(newIdea);
-              setValidationResponse(validationData);
-              setCurrentPage('validation');
-            }}
-            onNavigateToPlan={(ideaId: string, planData: any) => {
-              // Create or update idea with plan data
-              const newIdea: Idea = {
-                id: ideaId,
-                ideaId: ideaId,
-                summary: planData?.idea_description || 'Idea',
-                description: planData?.description || '',
-                bulletPoints: [],
-                status: 'planning',
-                createdAt: new Date(),
-                isActive: true,
-                businessPlan: planData,
-              };
-              setCurrentIdea(newIdea);
-              setPlanResponse(planData);
-              setCurrentPage('business-plan');
-            }}
-            onShowFollowupQuestions={(questions: any[]) => {
-              // Store questions to show in dialog
-              console.log('AI Followup Questions:', questions);
-              // You can add state to show a dialog here if needed
-            }}
-          />
+    <VideoEngagementProvider>
+      <div className="flex h-screen bg-gray-50">
+        {!showLandingPage && !showIntro && isAuthenticated && (
+          <VideoEngagementTray contextKey={currentPage} />
         )}
-        {currentPage === 'validation' && currentIdea && (
-          <NewValidationPage 
-            idea={currentIdea}
-            onComplete={handleValidationComplete}
-            ideaId={currentIdea.ideaId || apiResponse?.idea_id || ''}
-            detailedDescription={detailedDescription || currentIdea.detailedDescription || currentIdea.description}
-            companyName={companyName || currentIdea.companyName || ''}
-            industryCategory={industryCategory || currentIdea.industryCategory || ''}
-            domain={domainValue || currentIdea.domain || ''}
-            onValidationResponse={setValidationResponse}
-            onPlanResponse={setPlanResponse}
-          />
-        )}
-        {currentPage === 'business-plan' && currentIdea && (
-          <BusinessPlanPage 
-            idea={currentIdea}
-            onComplete={handleBusinessPlanComplete}
-            planData={planResponse}
-          />
-        )}
-        {currentPage === 'planner' && currentIdea && (
-          <PlannerPage 
-            idea={currentIdea}
-            onItemClick={handlePlannerItemClick}
-            planData={planResponse}
-          />
-        )}
-        {currentPage === 'implementation' && currentIdea && (
-          <ImplementationPage 
-            idea={currentIdea}
-            itemType={selectedPlannerItem || 'tasks'}
-            planData={planResponse}
-          />
-        )}
-        {currentPage === 'outcomes' && currentIdea && (
-          <OutcomesPage 
-            idea={currentIdea}
-            onTaskClick={() => {
-              setSelectedPlannerItem('tasks');
-              setCurrentPage('implementation');
-            }}
-            planData={planResponse}
-          />
-        )}
-        {currentPage === 'notifications' && (
-          <NotificationsPage />
-        )}
-        {currentPage === 'profile' && (
-          <ProfilePage userProfile={userProfile} />
-        )}
-      </main>
-
-      <SuggestionsPanel 
-        currentPage={currentPage} 
-        currentIdea={currentIdea} 
-        apiResponse={apiResponse}
-        validationResponse={validationResponse}
-        planResponse={planResponse}
-      />
-
-      {/* Company Name Dialog */}
-      {showCompanyNameDialog && currentIdea && (
-        <CompanyNameDialog
-          isOpen={showCompanyNameDialog}
-          idea={currentIdea}
-          onConfirm={handleCompanyNameConfirm}
-          apiResponse={apiResponse}
+        
+        <Sidebar 
+          currentPage={currentPage} 
+          onNavigate={navigateToPage} 
+          onHome={handleHomeClick}
+          onLogout={handleLogout}
         />
-      )}
-    </div>
+        
+        {/* Floating Home Button */}
+        <FloatingHomeButton onClick={handleHomeClick} />
+        
+        <main className="flex-1 overflow-auto">
+              {currentPage === 'idea' && (
+                <EnhancedIdeaPage 
+                  key={ideaPageKey}
+                  ideas={ideas} 
+                  onIdeaSubmit={handleIdeaSubmit}
+                  onIdeaAccept={handleIdeaAccept}
+                  onIdeaUpdate={(updatedIdea: Idea) => {
+                    setIdeas(prev => prev.map(i => i.id === updatedIdea.id ? updatedIdea : i));
+                  }}
+                  onApiResponse={setApiResponse}
+                  onNavigateToValidation={(ideaId: string, validationData: any) => {
+                    // Create or update idea with validation data
+                    const newIdea: Idea = {
+                      id: ideaId,
+                      ideaId: ideaId,
+                      summary: validationData?.validation_data?.idea_description || 'Idea',
+                      description: validationData?.validation_data?.verdict?.text || '',
+                      bulletPoints: [],
+                      status: 'draft',
+                      createdAt: new Date(),
+                      isActive: true,
+                      detailedDescription: validationData?.validation_data?.idea_description || '',
+                    };
+                    setCurrentIdea(newIdea);
+                    setValidationResponse(validationData);
+                    setCurrentPage('validation');
+                  }}
+                  onNavigateToPlan={(ideaId: string, planData: any) => {
+                    // Create or update idea with plan data
+                    const newIdea: Idea = {
+                      id: ideaId,
+                      ideaId: ideaId,
+                      summary: planData?.idea_description || 'Idea',
+                      description: planData?.description || '',
+                      bulletPoints: [],
+                      status: 'planning',
+                      createdAt: new Date(),
+                      isActive: true,
+                      businessPlan: planData,
+                    };
+                    setCurrentIdea(newIdea);
+                    setPlanResponse(planData);
+                    setCurrentPage('business-plan');
+                  }}
+                  onShowFollowupQuestions={(questions: any[]) => {
+                    // Store questions to show in dialog
+                    console.log('AI Followup Questions:', questions);
+                    // You can add state to show a dialog here if needed
+                  }}
+                />
+              )}
+              {currentPage === 'validation' && currentIdea && (
+                <NewValidationPage 
+                  idea={currentIdea}
+                  onComplete={handleValidationComplete}
+                  ideaId={currentIdea.ideaId || apiResponse?.idea_id || ''}
+                  detailedDescription={detailedDescription || currentIdea.detailedDescription || currentIdea.description}
+                  companyName={companyName || currentIdea.companyName || ''}
+                  industryCategory={industryCategory || currentIdea.industryCategory || ''}
+                  domain={domainValue || currentIdea.domain || ''}
+                  onValidationResponse={setValidationResponse}
+                  onPlanResponse={setPlanResponse}
+                />
+              )}
+              {currentPage === 'business-plan' && currentIdea && (
+                <BusinessPlanPage 
+                  idea={currentIdea}
+                  onComplete={handleBusinessPlanComplete}
+                  planData={planResponse}
+                />
+              )}
+              {currentPage === 'planner' && currentIdea && (
+                <PlannerPage 
+                  idea={currentIdea}
+                  onItemClick={handlePlannerItemClick}
+                  planData={planResponse}
+                />
+              )}
+              {currentPage === 'implementation' && currentIdea && (
+                <ImplementationPage 
+                  idea={currentIdea}
+                  itemType={selectedPlannerItem || 'tasks'}
+                  planData={planResponse}
+                />
+              )}
+              {currentPage === 'outcomes' && currentIdea && (
+                <OutcomesPage 
+                  idea={currentIdea}
+                  onTaskClick={() => {
+                    setSelectedPlannerItem('tasks');
+                    setCurrentPage('implementation');
+                  }}
+                  planData={planResponse}
+                />
+              )}
+              {currentPage === 'notifications' && (
+                <NotificationsPage />
+              )}
+              {currentPage === 'profile' && (
+                <ProfilePage userProfile={userProfile} />
+              )}
+        </main>
+
+        <SuggestionsPanel 
+          currentPage={currentPage} 
+          currentIdea={currentIdea} 
+          apiResponse={apiResponse}
+          validationResponse={validationResponse}
+          planResponse={planResponse}
+        />
+
+        {/* Company Name Dialog */}
+        {showCompanyNameDialog && currentIdea && (
+          <CompanyNameDialog
+            isOpen={showCompanyNameDialog}
+            idea={currentIdea}
+            onConfirm={handleCompanyNameConfirm}
+            apiResponse={apiResponse}
+          />
+        )}
+      </div>
+    </VideoEngagementProvider>
   );
 }

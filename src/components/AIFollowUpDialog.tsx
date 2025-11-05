@@ -25,9 +25,10 @@ interface AIFollowUpDialogProps {
   onClose: () => void;
   questions: FollowUpQuestion[];
   onSubmit: (answers: { question_id: string; question: string; answer: string }[]) => void;
+  validationErrors?: Record<string, string>; // Field-specific errors from API
 }
 
-export function AIFollowUpDialog({ isOpen, onClose, questions, onSubmit }: AIFollowUpDialogProps) {
+export function AIFollowUpDialog({ isOpen, onClose, questions, onSubmit, validationErrors = {} }: AIFollowUpDialogProps) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
 
   const handleAnswerChange = (questionId: string, answer: string) => {
@@ -172,8 +173,15 @@ export function AIFollowUpDialog({ isOpen, onClose, questions, onSubmit }: AIFol
                     value={answers[question.id] || ''}
                     onChange={(e) => handleAnswerChange(question.id, e.target.value)}
                     placeholder={question.placeholder || "Type your answer here..."}
-                    className="w-full min-h-[100px] p-3 border rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className={`w-full min-h-[100px] p-3 border rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500 ${
+                      validationErrors[question.id] ? 'border-red-500' : ''
+                    }`}
                   />
+                  {validationErrors[question.id] && (
+                    <p className="text-sm text-red-600 mt-2 font-medium">
+                      {validationErrors[question.id]}
+                    </p>
+                  )}
                   {question.validation && (
                     <p className="text-xs text-gray-500 mt-1">
                       {question.validation.min_len && `Min: ${question.validation.min_len} characters`}

@@ -38,6 +38,27 @@ export interface IdeaDetails {
   small_scale: ScaleDetails;
 }
 
+export interface IndustryDomainCategory {
+  Industry: string;
+  Domain: string;
+  Subcategories: string[];
+}
+
+export interface VideoFeedItem {
+  title: string;
+  author: string;
+  link: string;
+}
+
+export interface VideoFeedResponse {
+  ok: boolean;
+  params?: Record<string, any>;
+  counts?: Record<string, number>;
+  sections?: Record<string, VideoFeedItem[]>;
+  items?: VideoFeedItem[];
+  error?: string; // Error message when ok is false
+}
+
 export interface ClarifyPayload {
   idea_id: string;
   idea: {
@@ -64,8 +85,42 @@ export interface FollowUpQuestion {
 }
 
 export interface ClarifyResponse {
-  questions: FollowUpQuestion[];
+  status?: string; // Can be 'success', 'need_idea', or any other status
+  message?: string;
+  examples?: string[];
+  template?: string;
+  next_action?: string;
+  questions?: FollowUpQuestion[];
   model?: string;
+  error?: string; // Additional error field for other error types
+  [key: string]: any; // Allow any additional fields from API
+}
+
+export interface GuardIdeaPayload {
+  idea: string;
+}
+
+export interface GuardIdeaResponse {
+  ok: boolean;
+  idea_normalized?: string;
+  error?: string;
+  examples?: string[];
+}
+
+export interface ValidateAnswersPayload {
+  questions: FollowUpQuestion[];
+  answers: Record<string, string>;
+}
+
+export interface AnswerIssue {
+  id: string;
+  msg: string;
+}
+
+export interface ValidateAnswersResponse {
+  ok: boolean;
+  cleaned_answers?: Record<string, string>;
+  issues?: AnswerIssue[];
 }
 
 export interface ClarifiedFollowUp {
@@ -650,6 +705,48 @@ class IdeaAnalysisApiService {
   }
 
   /**
+   * Guard/validate the initial idea before proceeding
+   */
+  async guardIdea(payload: GuardIdeaPayload): Promise<GuardIdeaResponse> {
+    const accessToken = authApi.getAccessToken();
+    
+    if (!accessToken) {
+      console.error('[IdeaAnalysisAPI] No access token available');
+      throw new Error('Authentication required. Please login.');
+    }
+
+    console.log('[IdeaAnalysisAPI] Calling guard API with payload:', payload);
+
+    try {
+      const response = await authApi.fetchWithAuth(`${API_BASE_URL}/api/idea/guard/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.error('[IdeaAnalysisAPI] Unauthorized (401)');
+          throw new Error('Unauthorized: Please re-authenticate and try again.');
+        }
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[IdeaAnalysisAPI] API error:', response.status, errorData);
+        throw new Error(errorData.message || `API returned ${response.status}`);
+      }
+
+      const data: GuardIdeaResponse = await response.json();
+      console.log('[IdeaAnalysisAPI] Guard response received:', data);
+
+      return data;
+    } catch (error) {
+      console.error('[IdeaAnalysisAPI] Error calling guard API:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Call clarify API to get follow-up questions
    */
   async clarifyIdea(payload: ClarifyPayload): Promise<ClarifyResponse> {
@@ -692,6 +789,48 @@ class IdeaAnalysisApiService {
   }
 
   /**
+   * Validate follow-up answers before submitting for analysis
+   */
+  async validateAnswers(payload: ValidateAnswersPayload): Promise<ValidateAnswersResponse> {
+    const accessToken = authApi.getAccessToken();
+    
+    if (!accessToken) {
+      console.error('[IdeaAnalysisAPI] No access token available');
+      throw new Error('Authentication required. Please login.');
+    }
+
+    console.log('[IdeaAnalysisAPI] Calling validate-answers API with payload:', payload);
+
+    try {
+      const response = await authApi.fetchWithAuth(`${API_BASE_URL}/api/idea/clarify/validate-answers/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.error('[IdeaAnalysisAPI] Unauthorized (401)');
+          throw new Error('Unauthorized: Please re-authenticate and try again.');
+        }
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[IdeaAnalysisAPI] API error:', response.status, errorData);
+        throw new Error(errorData.message || `API returned ${response.status}`);
+      }
+
+      const data: ValidateAnswersResponse = await response.json();
+      console.log('[IdeaAnalysisAPI] Validate-answers response received:', data);
+
+      return data;
+    } catch (error) {
+      console.error('[IdeaAnalysisAPI] Error calling validate-answers API:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get all ideas for the logged-in user
    */
   async getUserIdeas(): Promise<UserIdeaItem[]> {
@@ -725,6 +864,84 @@ class IdeaAnalysisApiService {
       return data;
     } catch (error) {
       console.error('[IdeaAnalysisAPI] Error fetching user ideas:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Fetch industry, domain, and subcategory metadata
+   */
+  async getIndustryDomainSubcategories(): Promise<IndustryDomainCategory[]> {
+    const accessToken = authApi.getAccessToken();
+
+    if (!accessToken) {
+      console.error('[IdeaAnalysisAPI] No access token available');
+      throw new Error('Authentication required. Please login.');
+    }
+
+    console.log('[IdeaAnalysisAPI] Fetching industry/domain/subcategory metadata...');
+
+    try {
+      const response = await authApi.fetchWithAuth(
+        `${API_BASE_URL}/ideabusinessplan/industry-domain-subcategories/`,
+        { method: 'GET' }
+      );
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.error('[IdeaAnalysisAPI] Unauthorized (401) while fetching industry metadata');
+          throw new Error('Unauthorized: Please re-authenticate and try again.');
+        }
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[IdeaAnalysisAPI] API error:', response.status, errorData);
+        throw new Error(errorData.message || `API returned ${response.status}`);
+      }
+
+      const data: IndustryDomainCategory[] = await response.json();
+      console.log('[IdeaAnalysisAPI] Industry metadata fetched successfully:', data.length, 'industries');
+
+      return data;
+    } catch (error) {
+      console.error('[IdeaAnalysisAPI] Error fetching industry metadata:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Fetch curated YouTube video feed for user engagement
+   */
+  async getVideoEngageFeed(): Promise<VideoFeedResponse> {
+    const accessToken = authApi.getAccessToken();
+
+    if (!accessToken) {
+      console.error('[IdeaAnalysisAPI] No access token available');
+      throw new Error('Authentication required. Please login.');
+    }
+
+    console.log('[IdeaAnalysisAPI] Fetching video engagement feed...');
+
+    try {
+      const response = await authApi.fetchWithAuth(
+        `${API_BASE_URL}/api/videos/engage/feed/`,
+        { method: 'GET' }
+      );
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.error('[IdeaAnalysisAPI] Unauthorized (401) while fetching video feed');
+          throw new Error('Unauthorized: Please re-authenticate and try again.');
+        }
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[IdeaAnalysisAPI] Video feed API error:', response.status, errorData);
+        throw new Error(errorData.message || `API returned ${response.status}`);
+      }
+
+      const data: VideoFeedResponse = await response.json();
+      console.log('[IdeaAnalysisAPI] Video feed fetched successfully:', data.items?.length || 0, 'videos');
+
+      return data;
+    } catch (error) {
+      console.error('[IdeaAnalysisAPI] Error fetching video feed:', error);
       throw error;
     }
   }

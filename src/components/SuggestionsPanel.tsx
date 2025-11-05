@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { ExternalLink, Youtube, FileText, BookOpen, Video, Package, Trophy, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import { Idea } from '../App';
 import { AnalyseResponse, ValidationResponse, PlanResponse } from '../services/ideaAnalysisApi';
+import { useVideoEngagement, type VideoContextKey } from '../context/VideoEngagementContext';
+import { ContentViewerDialog } from './ContentViewerDialog';
 
 interface SuggestionsPanelProps {
   currentPage: string;
@@ -14,30 +17,86 @@ interface SuggestionsPanelProps {
 }
 
 export function SuggestionsPanel({ currentPage, currentIdea, isProfileSetup = false, apiResponse, validationResponse: _validationResponse, planResponse }: SuggestionsPanelProps) {
+  const { videosBySection } = useVideoEngagement();
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedContent, setSelectedContent] = useState<{
+    type: 'video' | 'article' | 'case-study' | 'case_study' | 'vendor' | 'success_story' | 'failure_story';
+    title: string;
+    source: string;
+    url: string;
+  } | null>(null);
+  
+  const handleContentClick = (item: { type: string; title: string; source: string; url?: string }) => {
+    if (item.url && item.url !== '#') {
+      setSelectedContent({
+        type: item.type as 'video' | 'article' | 'case-study' | 'case_study' | 'vendor' | 'success_story' | 'failure_story',
+        title: item.title,
+        source: item.source,
+        url: item.url
+      });
+      setViewerOpen(true);
+    }
+  };
+  
+  // Get videos for current context
+  const getContextVideos = () => {
+    const contextKey = currentPage as VideoContextKey;
+    const sections = Object.keys(videosBySection);
+    
+    // Try to find matching section
+    for (const section of sections) {
+      if (section.toLowerCase().includes(contextKey.toLowerCase()) || 
+          contextKey.toLowerCase().includes(section.toLowerCase())) {
+        return videosBySection[section]?.slice(0, 6) || [];
+      }
+    }
+    
+    // Fallback to general videos
+    return videosBySection.general?.slice(0, 6) || [];
+  };
+  
+  const contextVideos = getContextVideos();
+  
   const getSuggestions = () => {
     if (isProfileSetup) {
+      // Use real videos for profile setup if available
+      const profileVideos = contextVideos.map(v => ({
+        type: 'video',
+        title: v.title,
+        source: v.author,
+        url: v.link
+      }));
+      
       return {
         title: 'Getting Started Resources',
-        items: [
-          { type: 'video', title: 'Building a Startup: The Complete Guide', source: 'Y Combinator' },
-          { type: 'article', title: 'From Idea to Launch in 90 Days', source: 'TechCrunch' },
-          { type: 'case-study', title: 'How Successful Founders Started', source: 'Forbes' },
-          { type: 'video', title: 'Startup Fundamentals', source: 'Stanford eCorner' },
-          { type: 'article', title: 'Creating Your Business Roadmap', source: 'Entrepreneur' },
-          { type: 'case-study', title: 'Zero to One: Startup Stories', source: 'Medium' },
+        items: profileVideos.length > 0 ? profileVideos : [
+          { type: 'video', title: 'Building a Startup: The Complete Guide', source: 'Y Combinator', url: '#' },
+          { type: 'article', title: 'From Idea to Launch in 90 Days', source: 'TechCrunch', url: '#' },
+          { type: 'case-study', title: 'How Successful Founders Started', source: 'Forbes', url: '#' },
+          { type: 'video', title: 'Startup Fundamentals', source: 'Stanford eCorner', url: '#' },
+          { type: 'article', title: 'Creating Your Business Roadmap', source: 'Entrepreneur', url: '#' },
+          { type: 'case-study', title: 'Zero to One: Startup Stories', source: 'Medium', url: '#' },
         ],
       };
     }
+    
+    // Use real videos from API if available
+    const realVideos = contextVideos.map(v => ({
+      type: 'video',
+      title: v.title,
+      source: v.author,
+      url: v.link
+    }));
     
     switch (currentPage) {
       case 'idea':
         return {
           title: 'Idea Generation Resources',
-          items: [
-            { type: 'video', title: 'How to Validate Your Business Idea', source: 'Y Combinator' },
-            { type: 'article', title: 'The Lean Startup Methodology', source: 'Eric Ries' },
-            { type: 'case-study', title: 'Airbnb: From Idea to Unicorn', source: 'Harvard Business Review' },
-            { type: 'video', title: 'Finding Product-Market Fit', source: 'a16z' },
+          items: realVideos.length > 0 ? realVideos : [
+            { type: 'video', title: 'How to Validate Your Business Idea', source: 'Y Combinator', url: '#' },
+            { type: 'article', title: 'The Lean Startup Methodology', source: 'Eric Ries', url: '#' },
+            { type: 'case-study', title: 'Airbnb: From Idea to Unicorn', source: 'Harvard Business Review', url: '#' },
+            { type: 'video', title: 'Finding Product-Market Fit', source: 'a16z', url: '#' },
           ],
         };
       case 'validation':
@@ -379,12 +438,10 @@ export function SuggestionsPanel({ currentPage, currentIdea, isProfileSetup = fa
               {displayReferences.length > 0 ? (
                 // Show API/Validation references when available
                 displayReferences.map((item, index) => (
-                  <a
+                  <button
                     key={index}
-                    href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group"
+                    onClick={() => handleContentClick(item)}
+                    className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group text-left"
                   >
                     <div className="mt-0.5">{getIcon(item.type)}</div>
                     <div className="flex-1 min-w-0">
@@ -394,15 +451,15 @@ export function SuggestionsPanel({ currentPage, currentIdea, isProfileSetup = fa
                       <p className="text-xs text-gray-500 mt-0.5">{item.source}</p>
                     </div>
                     <ExternalLink className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </a>
+                  </button>
                 ))
               ) : (
                 // Show default suggestions
                 suggestions.items.map((item, index) => (
-                  <a
+                  <button
                     key={index}
-                    href="#"
-                    className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group"
+                    onClick={() => handleContentClick(item)}
+                    className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group text-left"
                   >
                     <div className="mt-0.5">{getIcon(item.type)}</div>
                     <div className="flex-1 min-w-0">
@@ -412,7 +469,7 @@ export function SuggestionsPanel({ currentPage, currentIdea, isProfileSetup = fa
                       <p className="text-xs text-gray-500 mt-0.5">{item.source}</p>
                     </div>
                     <ExternalLink className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </a>
+                  </button>
                 ))
               )}
             </CardContent>
@@ -449,6 +506,12 @@ export function SuggestionsPanel({ currentPage, currentIdea, isProfileSetup = fa
           )}
         </div>
       </ScrollArea>
+      
+      <ContentViewerDialog
+        isOpen={viewerOpen}
+        onClose={() => setViewerOpen(false)}
+        content={selectedContent}
+      />
     </aside>
   );
 }

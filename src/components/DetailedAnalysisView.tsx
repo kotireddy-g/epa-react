@@ -190,37 +190,6 @@ export function DetailedAnalysisView({ data, additionalInfo }: DetailedAnalysisV
                   );
                 })}
             </div>
-
-            {/* Pie Chart for TAM, SAM, SOM */}
-            {(stats_summary.TAM || stats_summary.SAM || stats_summary.SOM) && (
-              <div className="mt-6">
-                <h4 className="font-semibold mb-3">Market Size Distribution</h4>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={[
-                        { name: 'TAM', value: parseFloat(String(stats_summary.TAM || '0').replace(/[^0-9.]/g, '')) || 100000 },
-                        { name: 'SAM', value: parseFloat(String(stats_summary.SAM || '0').replace(/[^0-9.]/g, '')) || 20000 },
-                        { name: 'SOM', value: parseFloat(String(stats_summary.SOM || '0').replace(/[^0-9.]/g, '')) || 2000 },
-                      ]}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      <Cell fill="#3b82f6" />
-                      <Cell fill="#8b5cf6" />
-                      <Cell fill="#10b981" />
-                    </Pie>
-                    <Tooltip formatter={(value: any) => `₹${value} Crores`} />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            )}
             
             {stats_summary.price_bands && (
               <div className="mt-6">

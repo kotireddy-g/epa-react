@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Input } from './ui/input';
+import { ideaAnalysisApi, type IndustryDomainCategory } from '../services/ideaAnalysisApi';
 
 interface IndustryCategoryDialogProps {
   isOpen: boolean;
@@ -11,54 +12,34 @@ interface IndustryCategoryDialogProps {
   onSubmit: (industry: string, category: string) => void;
 }
 
-// Industry-Category mapping with subcategories
-const INDUSTRY_DATA = [
+// Fallback Industry-Category mapping with subcategories (used if API fails)
+const FALLBACK_INDUSTRY_DATA: IndustryDomainCategory[] = [
   {
-    "Industry": "Food & Beverages",
-    "Domain": "Food Business",
+    "Industry": "Information Technology",
+    "Domain": "Software & Services",
     "Subcategories": [
-      "Juice shops",
-      "Panipuri stalls",
-      "Restaurants",
-      "Cafes",
-      "Bakeries",
-      "Food Trucks",
-      "Catering services",
-      "Ice Cream Parlors",
-      "Fast Food outlets",
-      "Organic Stores",
-      "Sweet shops",
-      "Online Food Delivery",
-      "Food Aggregators"
+      "Application Development",
+      "SaaS",
+      "IT Consulting",
+      "Web Design",
+      "Cybersecurity",
+      "E-commerce Platforms",
+      "AI & Machine Learning Solutions",
+      "Managed IT"
     ]
   },
   {
-    "Industry": "Agriculture",
-    "Domain": "Farming & Distribution",
+    "Industry": "Education",
+    "Domain": "Learning Solutions",
     "Subcategories": [
-      "Crop Farming",
-      "Dairy",
-      "Poultry",
-      "Fisheries",
-      "Seed Suppliers",
-      "Fertilizer Dealers",
-      "Farm Equipment"
-    ]
-  },
-  {
-    "Industry": "Manufacturing",
-    "Domain": "Processed Goods",
-    "Subcategories": [
-      "Furniture",
-      "Apparel",
-      "Shoes",
-      "Chemicals",
-      "Paper",
-      "Metals",
-      "Plastics",
-      "Electronics",
-      "Machinery",
-      "Home Appliances"
+      "Schools",
+      "Colleges",
+      "EdTech Platforms",
+      "Coaching Centers",
+      "Skill Training",
+      "Vocational Courses",
+      "Language Schools",
+      "Tutoring"
     ]
   },
   {
@@ -73,21 +54,8 @@ const INDUSTRY_DATA = [
       "Ambulance Service",
       "Wellness Centers",
       "Telemedicine",
-      "Rehabilitation"
-    ]
-  },
-  {
-    "Industry": "Information Technology",
-    "Domain": "Software & Services",
-    "Subcategories": [
-      "Application Development",
-      "SaaS",
-      "IT Consulting",
-      "Web Design",
-      "Cybersecurity",
-      "E-commerce Platforms",
-      "AI & Machine Learning Solutions",
-      "Managed IT"
+      "Rehabilitation",
+      "Preventive Care & Nutrition"
     ]
   },
   {
@@ -105,17 +73,36 @@ const INDUSTRY_DATA = [
     ]
   },
   {
-    "Industry": "Education",
-    "Domain": "Learning Solutions",
+    "Industry": "Retail",
+    "Domain": "Commerce",
     "Subcategories": [
-      "Schools",
-      "Colleges",
-      "EdTech Platforms",
-      "Coaching Centers",
-      "Skill Training",
-      "Vocational Courses",
-      "Language Schools",
-      "Tutoring"
+      "Supermarkets",
+      "Department Stores",
+      "Online Marketplaces",
+      "Convenience Stores",
+      "Boutique Shops",
+      "Malls",
+      "Wholesalers",
+      "Hypermarts"
+    ]
+  },
+  {
+    "Industry": "Food & Beverages",
+    "Domain": "Food Business",
+    "Subcategories": [
+      "Juice shops",
+      "Street Food Stalls",
+      "Restaurants",
+      "Cafes",
+      "Bakeries",
+      "Food Trucks",
+      "Catering services",
+      "Ice Cream Parlors",
+      "Fast Food outlets",
+      "Organic Stores",
+      "Sweet shops",
+      "Online Food Delivery",
+      "Food Aggregators"
     ]
   },
   {
@@ -134,41 +121,51 @@ const INDUSTRY_DATA = [
     "Industry": "Transportation",
     "Domain": "Mobility Solutions",
     "Subcategories": [
-      "Taxi Services",
-      "Logistics",
-      "Courier",
-      "Trucking",
+      "Taxi & Ride-Sharing Services",
+      "Logistics & Supply Chain",
+      "Courier & Parcel Services",
+      "Trucking & Freight",
       "Freight",
       "Public Transport",
-      "Bike Rentals",
-      "Shipping",
+      "Bike & Scooter Rentals",
+      "Shipping Companies",
       "Warehousing"
     ]
   },
   {
-    "Industry": "Utilities",
-    "Domain": "Infrastructure",
+    "Industry": "Agriculture",
+    "Domain": "Farming & Distribution",
     "Subcategories": [
-      "Electricity Providers",
-      "Water Suppliers",
-      "Renewable Energy Firms",
-      "Gas Distribution",
-      "Waste Management",
-      "Recycling Plants"
+      "Crop Farming",
+      "Dairy",
+      "Poultry",
+      "Fisheries",
+      "Seed Suppliers",
+      "Fertilizer Dealers",
+      "Farm Equipment",
+      "Packaged Foods",
+      "Beverage Manufacturers",
+      "Organic & Health Food Stores",
+      "Dairy & Ice Cream Production"
     ]
   },
   {
-    "Industry": "Retail",
-    "Domain": "Commerce",
+    "Industry": "Manufacturing",
+    "Domain": "Processed Goods",
     "Subcategories": [
-      "Supermarkets",
-      "Department Stores",
-      "Online Marketplaces",
-      "Convenience Stores",
-      "Boutique Shops",
-      "Malls",
-      "Wholesalers",
-      "Hypermarts"
+      "Furniture",
+      "Apparel & Textiles",
+      "Footwear",
+      "Chemicals",
+      "Paper",
+      "Metals",
+      "Plastics",
+      "Electronics",
+      "Machinery",
+      "Home Appliances",
+      "Paper Goods",
+      "Metals & Alloys",
+      "Tools & Components"
     ]
   },
   {
@@ -188,16 +185,20 @@ const INDUSTRY_DATA = [
   },
   {
     "Industry": "Communication Services",
-    "Domain": "Media",
+    "Domain": "Media & Telecommunications",
     "Subcategories": [
       "TV Channels",
       "Radio Stations",
       "Digital Content Creators",
       "Social Media Firms",
-      "Newspapers",
+      "Newspapers & Magazines",
       "PR Agencies",
       "Advertising",
-      "Music Production"
+      "Music Production",
+      "Mobile Network Operators",
+      "Internet Providers",
+      "Cable & Satellite Services",
+      "Music & Podcast Production"
     ]
   },
   {
@@ -213,7 +214,7 @@ const INDUSTRY_DATA = [
     ]
   },
   {
-    "Industry": "Consumer Goods",
+    "Industry": "Consumer Goods & Durables",
     "Domain": "FMCG",
     "Subcategories": [
       "Packaged Foods",
@@ -223,7 +224,11 @@ const INDUSTRY_DATA = [
       "Stationery",
       "Beverages",
       "Snacks",
-      "Tobacco"
+      "Tobacco",
+      "Electronics",
+      "Home Appliances",
+      "Furniture",
+      "Kitchenware"
     ]
   },
   {
@@ -250,12 +255,25 @@ const INDUSTRY_DATA = [
       "Gaming Zones",
       "Amusement Centers",
       "Film Studios",
-      "Streaming Services"
+      "Streaming Services",
+      "Esports Organizations",
+      "Influencer Networks",
+      "Talent Management Agencies"
+    ]
+  },
+  {
+    "Industry": "Utilities",
+    "Domain": "Infrastructure",
+    "Subcategories": [
+      "Electricity Providers",
+      "Water Suppliers",
+      "Renewable Energy Firms",
+      "Gas Distribution",
+      "Waste Management",
+      "Recycling Plants"
     ]
   }
 ];
-
-const INDUSTRIES = [...INDUSTRY_DATA.map(item => item.Industry), 'Others'];
 
 export function IndustryCategoryDialog({ isOpen, onClose, onSubmit }: IndustryCategoryDialogProps) {
   const [industry, setIndustry] = useState('');
@@ -264,13 +282,52 @@ export function IndustryCategoryDialog({ isOpen, onClose, onSubmit }: IndustryCa
   const [customCategory, setCustomCategory] = useState('');
   const [showCustomIndustry, setShowCustomIndustry] = useState(false);
   const [showCustomCategory, setShowCustomCategory] = useState(false);
+  const [industryData, setIndustryData] = useState<IndustryDomainCategory[]>(FALLBACK_INDUSTRY_DATA);
+  const [isLoadingIndustries, setIsLoadingIndustries] = useState(false);
+  const [fetchError, setFetchError] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchIndustryData = async () => {
+      setIsLoadingIndustries(true);
+      setFetchError('');
+
+      try {
+        const data = await ideaAnalysisApi.getIndustryDomainSubcategories();
+        if (isMounted && Array.isArray(data) && data.length > 0) {
+          setIndustryData(data);
+        }
+      } catch (error: any) {
+        console.error('[IndustryCategoryDialog] Failed to fetch industry metadata:', error);
+        if (isMounted) {
+          setFetchError(error?.message || 'Failed to load industry data. Using default list.');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingIndustries(false);
+        }
+      }
+    };
+
+    fetchIndustryData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const industryOptions = useMemo(() => {
+    const unique = Array.from(new Set(industryData.map(item => item.Industry)));
+    return [...unique, 'Others'];
+  }, [industryData]);
 
   // Get categories based on selected industry
   const getCategories = () => {
     if (!industry || industry === 'Others') {
       return ['Others'];
     }
-    const selectedIndustry = INDUSTRY_DATA.find(item => item.Industry === industry);
+    const selectedIndustry = industryData.find(item => item.Industry === industry);
     return selectedIndustry ? [...selectedIndustry.Subcategories, 'Others'] : ['Others'];
   };
 
@@ -322,12 +379,16 @@ export function IndustryCategoryDialog({ isOpen, onClose, onSubmit }: IndustryCa
           {/* Industry Selection */}
           <div className="space-y-2">
             <Label htmlFor="industry">Industry *</Label>
-            <Select value={industry} onValueChange={handleIndustryChange}>
+            <Select 
+              value={industry} 
+              onValueChange={handleIndustryChange}
+              disabled={isLoadingIndustries}
+            >
               <SelectTrigger id="industry">
-                <SelectValue placeholder="Select industry" />
+                <SelectValue placeholder={isLoadingIndustries ? 'Loading industries...' : 'Select industry'} />
               </SelectTrigger>
               <SelectContent className="max-h-[300px]">
-                {INDUSTRIES.map((ind) => (
+                {industryOptions.map((ind) => (
                   <SelectItem key={ind} value={ind}>
                     {ind}
                   </SelectItem>
@@ -350,10 +411,10 @@ export function IndustryCategoryDialog({ isOpen, onClose, onSubmit }: IndustryCa
             <Select 
               value={category} 
               onValueChange={handleCategoryChange}
-              disabled={!industry}
+              disabled={!industry || isLoadingIndustries}
             >
               <SelectTrigger id="category">
-                <SelectValue placeholder={industry ? "Select category" : "Select industry first"} />
+                <SelectValue placeholder={industry ? (isLoadingIndustries ? 'Loading categories...' : 'Select category') : 'Select industry first'} />
               </SelectTrigger>
               <SelectContent className="max-h-[300px]">
                 {getCategories().map((cat: string) => (
@@ -372,6 +433,12 @@ export function IndustryCategoryDialog({ isOpen, onClose, onSubmit }: IndustryCa
               />
             )}
           </div>
+
+          {fetchError && (
+            <p className="text-sm text-amber-600">
+              {fetchError}
+            </p>
+          )}
         </div>
 
         <div className="flex justify-end gap-3">

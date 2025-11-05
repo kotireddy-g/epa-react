@@ -29,7 +29,7 @@ export function AIFollowupQuestionsDialog({
   onComplete
 }: AIFollowupQuestionsDialogProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [answers, setAnswers] = useState<Record<number, string | string[]>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -41,18 +41,18 @@ export function AIFollowupQuestionsDialog({
 
   const currentQuestion = questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
-  
-  // Check if all questions are answered with non-empty, non-whitespace responses
-  const allAnswered = questions.every((_, index) => {
+
+  const hasAnswer = (index: number): boolean => {
     const answer = answers[index];
-    return answer && answer.trim().length > 0;
-  });
-  
-  // Check if current question is answered with non-empty, non-whitespace response
-  const currentAnswered = () => {
-    const answer = answers[currentQuestionIndex];
-    return answer && answer.trim().length > 0;
+    if (Array.isArray(answer)) {
+      return answer.length > 0;
+    }
+    return Boolean(answer && answer.trim().length > 0);
   };
+
+  const allAnswered = questions.every((_, index) => hasAnswer(index));
+
+  const currentAnswered = () => hasAnswer(currentQuestionIndex);
 
   const handleAnswer = (answer: string) => {
     // Store the answer as-is, validation happens on navigation/submit
@@ -60,26 +60,31 @@ export function AIFollowupQuestionsDialog({
   };
 
   // Handle checkbox toggle for multiple selection
-  const handleCheckboxToggle = (option: string) => {
-    const currentAnswers = answers[currentQuestionIndex] || '';
-    const selectedOptions = currentAnswers ? currentAnswers.split(', ') : [];
-    
-    if (selectedOptions.includes(option)) {
-      // Remove option
-      const newOptions = selectedOptions.filter(o => o !== option);
-      setAnswers(prev => ({ ...prev, [currentQuestionIndex]: newOptions.join(', ') }));
-    } else {
-      // Add option
-      const newOptions = [...selectedOptions, option];
-      setAnswers(prev => ({ ...prev, [currentQuestionIndex]: newOptions.join(', ') }));
-    }
+  const handleCheckboxToggle = (option: string, checked: boolean) => {
+    setAnswers(prev => {
+      const previous = prev[currentQuestionIndex];
+      const selectedOptions = Array.isArray(previous) ? [...previous] : [];
+
+      let updatedOptions: string[];
+      if (checked) {
+        updatedOptions = selectedOptions.includes(option)
+          ? selectedOptions
+          : [...selectedOptions, option];
+      } else {
+        updatedOptions = selectedOptions.filter(o => o !== option);
+      }
+
+      return {
+        ...prev,
+        [currentQuestionIndex]: updatedOptions,
+      };
+    });
   };
 
   // Check if an option is selected
   const isOptionSelected = (option: string) => {
-    const currentAnswers = answers[currentQuestionIndex] || '';
-    const selectedOptions = currentAnswers ? currentAnswers.split(', ') : [];
-    return selectedOptions.includes(option);
+    const currentAnswer = answers[currentQuestionIndex];
+    return Array.isArray(currentAnswer) ? currentAnswer.includes(option) : false;
   };
 
   const handleNext = () => {
@@ -100,10 +105,15 @@ export function AIFollowupQuestionsDialog({
 
     try {
       // Build the payload
-      const ai_followup_questions = questions.map((q, index) => ({
+      const ai_followup_questions = questions.map((q, index) => {
+        const answer = answers[index];
+        const formattedAnswer = Array.isArray(answer) ? answer.join(', ') : (answer || '');
+
+        return {
         question: q.question,
-        answer: answers[index] || ''
-      }));
+        answer: formattedAnswer
+        };
+      });
 
       const payload = {
         idea_id: ideaId,
@@ -185,7 +195,7 @@ export function AIFollowupQuestionsDialog({
                     <Checkbox
                       id={`option-${index}`}
                       checked={isOptionSelected(option)}
-                      onCheckedChange={() => handleCheckboxToggle(option)}
+                      onCheckedChange={(checked) => handleCheckboxToggle(option, Boolean(checked))}
                     />
                     <Label
                       htmlFor={`option-${index}`}
@@ -203,7 +213,7 @@ export function AIFollowupQuestionsDialog({
               <div>
                 <Textarea
                   placeholder="Type your answer here... *"
-                  value={answers[currentQuestionIndex] || ''}
+                  value={typeof answers[currentQuestionIndex] === 'string' ? (answers[currentQuestionIndex] as string) : ''}
                   onChange={(e) => handleAnswer(e.target.value)}
                   className="min-h-[100px]"
                   required
@@ -269,7 +279,7 @@ export function AIFollowupQuestionsDialog({
                 className={`w-8 h-8 rounded-full text-sm font-medium transition-all ${
                   index === currentQuestionIndex
                     ? 'bg-blue-600 text-white ring-2 ring-blue-300'
-                    : answers[index]
+                    : hasAnswer(index)
                     ? 'bg-green-500 text-white'
                     : 'bg-gray-200 text-gray-600'
                 }`}
